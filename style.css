@@ -28,3 +28,34 @@ main{animation:none}
 html.wave-active{overflow:hidden}
 @media(max-width:720px){.route-wave-leaf{width:48px;height:48px;margin-bottom:17px}.route-wave-name{font-size:clamp(32px,9vw,52px)}.route-wave-line{margin-top:20px}}
 @media(prefers-reduced-motion:reduce){.route-wave,.route-wave *{animation:none!important;transition:none!important}}
+
+/* Living woodland: soft photographic foliage and drifting daylight.
+   Content stays above the decoration; the homepage keeps its original design. */
+main[data-section]:not([data-section="home"]){
+  position:relative;isolation:isolate;overflow:clip;
+  background:#f8f6f0;--forest-opacity:.24;--forest-photo:url('assets/conifers.jpg');
+}
+main[data-section="delivery"],main[data-section="contacts"]{--forest-photo:url('assets/trees.jpg');--forest-opacity:.29}
+main[data-section="reviews"],main[data-section="about"]{--forest-opacity:.31}
+main[data-section="catalog"],main[data-section="product"],main[data-section="cart"],main[data-section="checkout"],main[data-section="favorites"]{--forest-opacity:.14}
+main[data-section]:not([data-section="home"])::before{
+  content:"";position:absolute;inset:-2%;z-index:-2;pointer-events:none;
+  background-image:linear-gradient(90deg,rgba(248,246,240,.10),rgba(248,246,240,.80) 28%,rgba(248,246,240,.92) 50%,rgba(248,246,240,.80) 72%,rgba(248,246,240,.10)),var(--forest-photo);
+  background-position:center,center top;background-size:100% 100%,max(100%,1050px) auto;background-repeat:no-repeat,repeat-y;
+  opacity:var(--forest-opacity);animation:woodland-drift 32s ease-in-out infinite alternate;transform-origin:50% 15%;
+}
+main[data-section]:not([data-section="home"])::after{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse at 12% 10%,#fdfbeab8 0%,transparent 40%),radial-gradient(ellipse at 88% 50%,#e9f0d35c 0%,transparent 43%);
+  opacity:.6;animation:woodland-light 18s ease-in-out infinite alternate;
+}
+@keyframes woodland-drift{0%{transform:scale(1) translateX(-.6%)}100%{transform:scale(1.035) translateX(.6%)}}
+@keyframes woodland-light{0%{opacity:.35;transform:translateX(-1%)}100%{opacity:.75;transform:translateX(1%)}}
+main[data-section]:not([data-section="home"]) .filters{background:#f8f6f0ed}
+main[data-section="checkout"] .form{background:#f8f6f0d9;border-radius:14px}
+@media(max-width:720px){
+  main[data-section]:not([data-section="home"]){--forest-opacity:.16}
+  main[data-section="delivery"],main[data-section="reviews"],main[data-section="contacts"],main[data-section="about"]{--forest-opacity:.23}
+  main[data-section]:not([data-section="home"])::before{background-size:100% 100%,1000px auto;background-position:center,54% top}
+}
+@media(prefers-reduced-motion:reduce){main[data-section]::before,main[data-section]::after{animation:none!important;transform:none!important}}
