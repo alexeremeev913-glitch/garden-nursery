@@ -25,7 +25,7 @@ main{animation:none}
 .route-wave-line{display:block;position:relative;width:72px;height:2px;margin-top:24px;background:#ffffff55;border-radius:3px;overflow:hidden}
 .route-wave-line:after{content:"";position:absolute;inset:0;width:45%;border-radius:3px;background:#f7f9ed;animation:wave-loading .85s ease-in-out infinite}
 @keyframes wave-loading{from{transform:translateX(-100%)}to{transform:translateX(240%)}}
-html.wave-active{overflow-y:scroll;overflow-x:hidden;overscroll-behavior:none}
+html.wave-active{overscroll-behavior:none}
 @media(max-width:720px){.route-wave-leaf{width:48px;height:48px;margin-bottom:17px}.route-wave-name{font-size:clamp(32px,9vw,52px)}.route-wave-line{margin-top:20px}}
 @media(prefers-reduced-motion:reduce){.route-wave,.route-wave *{animation:none!important;transition:none!important}}
 
@@ -65,3 +65,11 @@ html,html.wave-active{overflow-y:scroll;overflow-x:hidden;scrollbar-gutter:stabl
 #app{width:100%;min-width:0;max-width:100%}
 main,html[data-direction=back] main,html:active-view-transition main{animation:none;transform:none;translate:none}
 .route-wave{overscroll-behavior:none}
+
+/* Curtain is the only moving surface during navigation. No layout or scroll changes until full cover. */
+html,html.wave-active{overflow-y:scroll;overflow-x:hidden;scrollbar-gutter:stable}
+html.wave-active{scroll-behavior:auto!important;overflow-anchor:none}
+html.wave-active #app,html.wave-active #app *,html.wave-active #app *::before,html.wave-active #app *::after{animation-play-state:paused!important}
+html.wave-active #app,html.wave-active #app main,html.wave-active #app .header,html.wave-active #app .footer{transform:none!important;translate:none!important;transition:none!important;animation:none!important}
+.route-wave.wave-covered{background:#5f8b3e}
+.route-wave{contain:strict;max-width:100%;max-height:100%;}
