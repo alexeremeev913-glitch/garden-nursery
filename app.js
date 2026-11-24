@@ -58,8 +58,8 @@ if(page==='about')body=editorialHero(page,'Знакомство с питомн�
 return `<div class="wrap editorial">${crumb(title)}${body}${editorialNav(page)}</div>`;
 }
 let timeout;function toast(t){let x=document.querySelector('.toast');x.textContent=t;x.classList.add('show');clearTimeout(timeout);timeout=setTimeout(()=>x.classList.remove('show'),2600)}
-function render(){chosen=0;detailQty=1;let {page,params}=route();if(!['home','catalog','product','cart','checkout','favorites','about','delivery','reviews','contacts'].includes(page))page='home';document.body.className=page==='home'?'home':'';let main=page==='home'?home():page==='catalog'?catalog(params):page==='product'?product(find(params.get('id'))):page==='cart'?cartPage():page==='checkout'?checkout():page==='favorites'?`<div class="wrap section">${crumb('Избранное')}${pageHead('Избранное','Ваши сохранённые растения')}${fav.length?cards(data.filter(x=>fav.includes(x.id))):`<div class="empty"><h2>Список пока пуст</h2><p>Нажмите на сердечко у понравившегося растения.</p>${btn('catalog','В каталог')}</div>`}</div>`:info(page);document.querySelector('#app').innerHTML=header()+`<main tabindex="-1" data-section="${page}">${main}</main>`+footer()+'<div class="toast" role="status"></div>';document.querySelectorAll('.navlinks a').forEach(a=>{if(new URL(a.href,location.href).pathname===location.pathname)a.setAttribute('aria-current','page')});if(page==='catalog'){document.querySelectorAll('.filters input,#query,#sort').forEach(x=>x.addEventListener('input',renderCatalog));renderCatalog();if(params.get('focus')&&!navigating)document.querySelector('#query').focus({preventScroll:true})}document.title=({home:'Питомник растений',catalog:'Каталог',product:find(params.get('id'))?.name,cart:'Корзина',favorites:'Избранное',checkout:'Оформление заказа',about:'О питомнике',delivery:'Доставка и оплата',contacts:'Контакты',reviews:'Отзывы'}[page]||'Питомник')+' — '+BRAND}
-window.addEventListener('pageshow',e=>{if(e.persisted){loadState();render()}});window.addEventListener('storage',e=>{if(e.key===null||['garden_cart','garden_fav'].includes(e.key)){loadState();render()}});let navigating=false,pendingWave=null;if(portable)window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});normalizeEntry();render();if(!portable)installNavigation();
+function render(){chosen=0;detailQty=1;let {page,params}=route();if(!['home','catalog','product','cart','checkout','favorites','about','delivery','reviews','contacts'].includes(page))page='home';document.body.className=page==='home'?'home':'';let main=page==='home'?home():page==='catalog'?catalog(params):page==='product'?product(find(params.get('id'))):page==='cart'?cartPage():page==='checkout'?checkout():page==='favorites'?`<div class="wrap section">${crumb('Избранное')}${pageHead('Избранное','Ваши сохранённые растения')}${fav.length?cards(data.filter(x=>fav.includes(x.id))):`<div class="empty"><h2>Список пока пуст</h2><p>Нажмите на сердечко у понравившегося растения.</p>${btn('catalog','В каталог')}</div>`}</div>`:info(page);document.querySelector('#app').innerHTML=header()+`<main tabindex="-1" data-section="${page}">${main}</main>`+footer()+'<div class="toast" role="status"></div>';decorateGarden();document.querySelectorAll('.navlinks a').forEach(a=>{if(new URL(a.href,location.href).pathname===location.pathname)a.setAttribute('aria-current','page')});if(page==='catalog'){document.querySelectorAll('.filters input,#query,#sort').forEach(x=>x.addEventListener('input',renderCatalog));renderCatalog();if(params.get('focus')&&!navigating)document.querySelector('#query').focus({preventScroll:true})}document.title=({home:'Питомник растений',catalog:'Каталог',product:find(params.get('id'))?.name,cart:'Корзина',favorites:'Избранное',checkout:'Оформление заказа',about:'О питомнике',delivery:'Доставка и оплата',contacts:'Контакты',reviews:'Отзывы'}[page]||'Питомник')+' — '+BRAND}
+window.addEventListener('pageshow',e=>{if(e.persisted){loadState();render()}});window.addEventListener('storage',e=>{if(e.key===null||['garden_cart','garden_fav'].includes(e.key)){loadState();render()}});let navigating=false,pendingWave=null;if(portable)window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});normalizeEntry();render();if(!portable){installNavigation();installLivingBackground();gardenIntro();}
 
 function setMenu(open){const nav=document.querySelector('.navlinks'),button=document.querySelector('.menu'),backdrop=document.querySelector('.menu-backdrop');if(!nav||!button)return;nav.classList.toggle('open',open);button.setAttribute('aria-expanded',String(open));backdrop?.classList.toggle('open',open);document.body.classList.toggle('menu-open',open)}
 function toggleMenu(){setMenu(document.querySelector('.menu')?.getAttribute('aria-expanded')!=='true')}
@@ -79,3 +79,56 @@ function installNavigation(){document.addEventListener('click',e=>{if(e.defaultP
 
 function initialHomeEntry(path,referrer,navigationType,origin){if(!/\/delivery\.html$/.test(path)||navigationType==='reload'||navigationType==='back_forward')return false;const base=path.slice(0,path.lastIndexOf('/')+1);if(!referrer)return true;try{const ref=new URL(referrer);return ref.origin!==origin||!ref.pathname.startsWith(base)}catch{return true}}
 function normalizeEntry(){if(portable)return;const nav=performance.getEntriesByType?.('navigation')?.[0]?.type||'navigate';if(initialHomeEntry(location.pathname,document.referrer,nav,location.origin)){const home=new URL('./',location.href);history.replaceState(history.state,'',home.href)}}
+
+function installLivingBackground(){
+ const motion=matchMedia('(prefers-reduced-motion: reduce)');
+ let frame=0,x=0,y=0,tx=0,ty=0,px=50,py=40,txp=50,typ=40;
+ const update=()=>{frame=0;if(motion.matches||document.hidden||document.documentElement.classList.contains('wave-active'))return;
+ x+=(tx-x)*.14;y+=(ty-y)*.14;px+=(txp-px)*.14;py+=(typ-py)*.14;
+ const style=document.documentElement.style;
+ style.setProperty('--garden-x',x.toFixed(2)+'px');style.setProperty('--garden-y',y.toFixed(2)+'px');
+ style.setProperty('--garden-light-x',px.toFixed(2)+'%');style.setProperty('--garden-light-y',py.toFixed(2)+'%');
+ if(Math.abs(tx-x)+Math.abs(ty-y)+Math.abs(txp-px)+Math.abs(typ-py)>.12)frame=requestAnimationFrame(update)
+ };
+ const queue=()=>{if(!frame&&!motion.matches)frame=requestAnimationFrame(update)};
+ const reset=()=>{tx=0;ty=0;txp=50;typ=40;queue()};
+ window.addEventListener('pointermove',e=>{if(motion.matches||document.documentElement.classList.contains('wave-active')||document.querySelector('.garden-intro'))return;
+ const nx=Math.min(1,Math.max(0,e.clientX/Math.max(innerWidth,1))),ny=Math.min(1,Math.max(0,e.clientY/Math.max(innerHeight,1)));
+ tx=(nx-.5)*(e.pointerType==='touch'?24:58);ty=(ny-.5)*(e.pointerType==='touch'?18:42);txp=nx*100;typ=ny*100;queue()
+ },{passive:true});
+ document.documentElement.addEventListener('pointerleave',reset,{passive:true});
+ window.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')reset()},{passive:true});
+ window.addEventListener('pointercancel',reset,{passive:true});
+ window.addEventListener('blur',reset);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)reset()});
+ if(motion.addEventListener)motion.addEventListener('change',()=>{if(motion.matches){if(frame)cancelAnimationFrame(frame);frame=0;for(const k of ['--garden-x','--garden-y','--garden-light-x','--garden-light-y'])document.documentElement.style.removeProperty(k)}else reset()});
+}
+function decorateGarden(){
+ const main=document.querySelector('main');if(!main)return;
+ const surfaces=main.querySelectorAll('.hero,.editorial-hero');
+ for(const surface of surfaces){if(surface.querySelector('.garden-ambient'))continue;
+ const layer=document.createElement('div');layer.className='garden-ambient';layer.setAttribute('aria-hidden','true');
+ layer.innerHTML=Array.from({length:7},(_,i)=>`<i style="--i:${i};--lx:${58+(i*13)%40}%;--ly:${9+(i*23)%78}%;--delay:${-i*1.9}s"></i>`).join('');
+ surface.append(layer);
+ }
+}
+async function gardenIntro(){
+ if(portable||route().page!=='home'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const navigation=performance.getEntriesByType?.('navigation')?.[0]?.type;
+ if(navigation==='back_forward')return;
+ const app=document.querySelector('#app');if(!app)return;
+ const layer=document.createElement('div');
+ layer.className='garden-intro';layer.setAttribute('role','dialog');layer.setAttribute('aria-label','Добро пожаловать в питомник');layer.setAttribute('aria-modal','true');
+ layer.innerHTML=`<div class="garden-intro-photo" aria-hidden="true"></div><div class="garden-intro-rays" aria-hidden="true"></div><div class="garden-intro-grain" aria-hidden="true">${Array.from({length:12},(_,i)=>`<i style="--n:${i};--x:${(i*29+11)%98}%;--y:${(i*37+9)%96}%;--d:${-i*.7}s"></i>`).join('')}</div><div class="garden-intro-center"><svg class="garden-intro-sprout" viewBox="0 0 160 160" fill="none" aria-hidden="true"><circle class="sprout-ring" cx="80" cy="80" r="72"/><path class="sprout-stem" d="M78 128C76 99 80 63 104 33"/><path class="sprout-leaf sprout-one" d="M87 83C47 83 26 57 32 26C61 25 88 46 87 83Z"/><path class="sprout-leaf sprout-two" d="M92 62C87 34 110 18 137 20C135 49 116 64 92 62Z"/><path class="sprout-vein" d="M86 81L43 40M94 60L126 29"/></svg><span class="intro-kicker">ПИТОМНИК ДЕКОРАТИВНЫХ РАСТЕНИЙ</span><div class="intro-title">${BRAND}</div><span class="intro-tagline">Здесь начинается ваш сад</span><span class="intro-track"><i></i></span></div><button class="intro-skip" type="button">Пропустить <span aria-hidden="true">→</span></button>`;
+ let skipped=false,skipResolve;const skip=new Promise(resolve=>{skipResolve=resolve});
+ const close=()=>{if(!skipped){skipped=true;skipResolve()}};
+ const onKey=e=>{if(e.key==='Escape'){e.preventDefault();close()}if(e.key==='Tab'){e.preventDefault();layer.querySelector('.intro-skip')?.focus({preventScroll:true})}};
+ const root=document.documentElement;
+ root.classList.add('garden-intro-active');document.body.append(layer);app.inert=true;
+ layer.querySelector('.intro-skip').addEventListener('click',close);
+ layer.addEventListener('keydown',onKey);layer.querySelector('.intro-skip').focus({preventScroll:true});
+ try{
+ await Promise.race([skip,Promise.all([waitMs(1450),Promise.race([waitPageAssets(),waitMs(1850)])])]);
+ layer.classList.add('intro-exit');await waitMs(500)
+ }finally{layer.remove();app.inert=false;root.classList.remove('garden-intro-active');document.querySelector('main')?.focus({preventScroll:true})}
+}

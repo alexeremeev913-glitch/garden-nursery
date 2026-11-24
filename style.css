@@ -145,3 +145,49 @@ html.wave-active #app,html.wave-active #app main,html.wave-active #app .header,h
 @media(max-width:900px){.checkout-layout{grid-template-columns:minmax(0,1fr)}.checkout-summary{position:static}.checkout-hero>img{max-height:230px}}
 @media(max-width:580px){.checkout-hero{grid-template-columns:1fr;min-height:0}.checkout-hero>div{padding:24px 20px}.checkout-hero>img{min-height:0;height:118px}.checkout-hero h1{font-size:39px}.checkout-progress{gap:8px;padding:18px 0;justify-content:space-between;flex-wrap:nowrap}.checkout-progress>a,.checkout-progress>div{font-size:10px;gap:5px}.checkout-progress>a:after{display:none}.progress-dot{width:21px;height:21px;font-size:10px}.checkout-layout{gap:15px}.checkout-card,.checkout-summary{padding:18px}.checkout-fields,.checkout-methods{grid-template-columns:1fr;gap:12px}.checkout-choice-body{min-height:70px}.checkout-item{grid-template-columns:49px minmax(0,1fr) auto;gap:8px}.checkout-thumb img{height:55px}.checkout-item strong{font-size:12px}.checkout-final span{font-size:12px}}
 @media(prefers-reduced-motion:reduce){.checkout-wrap *{transition:none!important}}
+
+/* Living garden — only decorative layers move, never layout or content. */
+:root{--garden-x:0px;--garden-y:0px;--garden-light-x:50%;--garden-light-y:40%}
+.hero,.editorial-hero{isolation:isolate}
+.hero:before,.editorial-hero:before{inset:-36px;translate:var(--garden-x) var(--garden-y);will-change:transform,translate}
+.hero-inner,.editorial-copy{position:relative;z-index:2}
+.editorial-index{z-index:2}
+.garden-ambient{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden;isolation:isolate}
+.garden-ambient:before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at var(--garden-light-x) var(--garden-light-y),#dceba03d,transparent 43%);mix-blend-mode:screen;opacity:.85}
+.garden-ambient i{position:absolute;left:var(--lx);top:var(--ly);width:clamp(9px,1.4vw,18px);height:clamp(14px,2vw,25px);border-radius:85% 8% 85% 8%;background:linear-gradient(135deg,#ecf8b4ba,#91be5780);box-shadow:0 0 12px #d3ed8e32;opacity:.4;animation:garden-leaf-drift 14s ease-in-out infinite;animation-delay:var(--delay);translate:calc(var(--garden-x)*.7) calc(var(--garden-y)*.7)}
+@keyframes garden-leaf-drift{0%,100%{transform:translate(0,0) rotate(-25deg);opacity:.12}45%{transform:translate(-26px,42px) rotate(32deg);opacity:.58}75%{transform:translate(12px,68px) rotate(75deg);opacity:.25}}
+main[data-section]:not([data-section="home"])::before{inset:-36px;translate:var(--garden-x) var(--garden-y);will-change:transform,translate}
+main[data-section]:not([data-section="home"])::after{background:radial-gradient(ellipse at var(--garden-light-x) var(--garden-light-y),#e0edbda6,transparent 36%),radial-gradient(ellipse at 85% 75%,#fefce6a8,transparent 45%);animation:living-light 10s ease-in-out infinite alternate;opacity:.6}
+@keyframes living-light{from{opacity:.36}to{opacity:.78}}
+/* Intro — botanical illustration, light and a soft upward reveal */
+.garden-intro{position:fixed;inset:0;z-index:2000;background:#243f25;color:#fffdf0;isolation:isolate;display:grid;place-items:center;overflow:hidden;touch-action:none;contain:strict;transition:opacity .48s ease,clip-path .48s cubic-bezier(.72,.03,.28,1);clip-path:inset(0 0 0 0)}
+.garden-intro-photo{position:absolute;inset:-6%;z-index:-3;background:linear-gradient(120deg,#18371cf0,#3e6131b8 55%,#294920d9),url('assets/hero.jpg') center/cover;animation:intro-photo 5s ease-out both}
+@keyframes intro-photo{from{transform:scale(1.13)}to{transform:scale(1.02)}}
+.garden-intro-rays{position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse at 70% 12%,#a7c87845,transparent 55%),radial-gradient(ellipse at 25% 84%,#a7c87823,transparent 40%);animation:intro-rays 2.8s ease-in-out alternate infinite}
+@keyframes intro-rays{to{opacity:.48}}
+.garden-intro-grain{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.garden-intro-grain i{position:absolute;left:var(--x);top:var(--y);height:clamp(7px,1.5vw,17px);width:clamp(5px,1vw,11px);background:#ccdf9c9c;border-radius:90% 8%;animation:intro-motes 6s ease-in-out infinite;animation-delay:var(--d)}
+@keyframes intro-motes{0%,100%{opacity:.12;transform:translate(0,0) rotate(20deg)}50%{opacity:.55;transform:translate(18px,-38px) rotate(-45deg)}}
+.garden-intro-center{width:min(90%,780px);padding:18px;text-align:center;display:grid;justify-items:center}
+.garden-intro-sprout{width:clamp(102px,20vw,152px);height:auto;overflow:visible;margin-bottom:23px;filter:drop-shadow(0 5px 28px #0a210c35)}
+.sprout-ring{stroke:#e4efbd73;stroke-width:1;stroke-dasharray:453;stroke-dashoffset:453;animation:sprout-draw 1s .05s ease forwards}
+.sprout-stem,.sprout-vein{stroke:#e0efb8;stroke-width:2.3;stroke-linecap:round;stroke-dasharray:180;stroke-dashoffset:180;animation:sprout-draw .75s .12s ease forwards}
+.sprout-leaf{stroke:#dceeb0;stroke-width:1.6;fill:#bfd98375;transform-box:fill-box;transform-origin:100% 100%;animation:sprout-grow .65s cubic-bezier(.18,.75,.3,1) both}
+.sprout-one{animation-delay:.32s}.sprout-two{animation-delay:.52s;transform-origin:0% 100%}.sprout-vein{animation-delay:.65s}
+@keyframes sprout-draw{to{stroke-dashoffset:0}}
+@keyframes sprout-grow{from{transform:scale(.05) rotate(12deg);opacity:0}to{transform:none;opacity:1}}
+.intro-kicker{font-size:clamp(9px,1.4vw,12px);letter-spacing:.18em;color:#dcebbd;font-weight:600;animation:intro-copy .65s .32s both}
+.intro-title{font:400 clamp(28px,5.6vw,66px)/1.08 Georgia,'Times New Roman',serif;letter-spacing:-.035em;margin:17px 0 12px;text-wrap:balance;animation:intro-copy .7s .5s both}
+.intro-tagline{font-size:clamp(13px,2vw,17px);color:#e8efda;animation:intro-copy .6s .72s both}
+@keyframes intro-copy{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:none}}
+.intro-track{width:90px;height:2px;border-radius:4px;background:#fff4;margin-top:28px;overflow:hidden;animation:intro-copy .4s .7s both}
+.intro-track i{display:block;width:100%;height:100%;background:#d6e7ac;transform-origin:left;animation:intro-progress 1.55s .15s both}
+@keyframes intro-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.intro-skip{position:absolute;right:max(22px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom));border:1px solid #ffffff55;background:#223c2670;border-radius:30px;color:#f7faed;padding:10px 16px;display:flex;align-items:center;gap:10px;font:inherit;font-size:13px;cursor:pointer;transition:background .2s}
+.intro-skip:hover{background:#557744}.intro-skip:focus-visible{outline:2px solid #e7f0bc;outline-offset:4px}
+.garden-intro.intro-exit{clip-path:inset(0 0 100% 0);opacity:.97;pointer-events:none}
+html.garden-intro-active{overscroll-behavior:none}
+html.garden-intro-active #app{pointer-events:none}
+html.wave-active .garden-ambient,html.wave-active .garden-ambient *,html.wave-active main:before,html.wave-active main:after{animation-play-state:paused!important}
+@media(max-width:720px){.garden-intro-center{width:96%;padding:14px}.garden-intro-sprout{margin-bottom:18px}.intro-title{font-size:clamp(28px,7.5vw,42px)}.intro-kicker{letter-spacing:.11em}.intro-track{margin-top:20px}.garden-ambient i{animation-duration:16s;opacity:.4}.hero:before,.editorial-hero:before{inset:-30px}}
+@media(prefers-reduced-motion:reduce){.garden-intro{display:none!important}.hero:before,.editorial-hero:before,main[data-section]:before{translate:none!important;transform:none!important;animation:none!important}.garden-ambient i{animation:none!important;translate:none!important;opacity:.18}.garden-ambient:before,main[data-section]:after{animation:none!important}}
