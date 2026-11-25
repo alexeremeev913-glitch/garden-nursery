@@ -68,6 +68,26 @@
   function createSurface(canvas,atlas){
     const ctx=canvas.getContext('2d');
     if(!ctx)return null;
+    // Prepare the first trunk patch once. At the soil line, clods occlude the
+    // sides of the flare at different heights and the near lip stays visible.
+    const [sx,sy,sw,sh,x]=patches[0],collarPad=16;
+    const collar=document.createElement('canvas');
+    collar.width=sw+2*collarPad;collar.height=sh;
+    const wood=collar.getContext('2d');
+    const axis=collarPad+168*525/W-x;
+    for(let row=0;row<sh;row++){
+      const flare=1+.58*smoothStep(sh-33,sh,row)**2;
+      wood.drawImage(atlas,sx,sy+row,sw,1,axis+(collarPad-axis)*flare,row,sw*flare,1);
+    }
+    wood.globalCompositeOperation='destination-out';
+    for(let col=0;col<collar.width;col++){
+      const distance=Math.min(1,Math.abs(col-axis)/(sw*.63));
+      const soilLine=sh-2-6*distance**1.3+1.4*Math.sin(col*.71)+.8*Math.cos(col*2.1);
+      for(let row=sh-16;row<sh;row++){
+        wood.globalAlpha=smoothStep(soilLine-3,soilLine+1,row);
+        wood.fillRect(col,row,1,1);
+      }
+    }
     return {
       draw(bones){
         const dpr=Math.min(devicePixelRatio||1,1.75);
@@ -81,21 +101,17 @@
           // Extend along the shoot first, and expand wood and needles normal to it.
           const ux=bone.dx/bone.len, uy=bone.dy/bone.len;
           const vx=bone.vx/bone.len, vy=bone.vy/bone.len;
-          const nx=-(bone.sin*ux+bone.cos*uy)*bone.width;
-          const ny=(bone.cos*ux-bone.sin*uy)*bone.width;
+          // Secondary thickening follows the leader, tapering from the collar to its tip.
+          const girth=i<9 ? 1+1.28*bone.age*(1-i/9)**1.35 : 1;
+          const nx=-(bone.sin*ux+bone.cos*uy)*bone.width*girth;
+          const ny=(bone.cos*ux-bone.sin*uy)*bone.width*girth;
           const a=vx*ux-nx*uy, c=vx*uy+nx*ux, b=vy*ux-ny*uy, d=vy*uy+ny*ux;
           ctx.setTransform(w/W*a,h/H*b,w/W*c,h/H*d,
             w/W*(bone.ox-a*bone.ax-c*bone.ay),h/H*(bone.oy-b*bone.ax-d*bone.ay));
-          ctx.drawImage(atlas,sx,sy,sw,sh,x*W/525,y*H/913,sw*W/525,sh*H/913);
           if(i===0){
-            // Widen the lowest bark rings into a root collar, keeping their grain continuous.
-            const rows=Math.min(sh,32);
-            for(let j=0;j<rows;j++){
-              const flare=1+.58*(j/rows)**2;
-              const srcY=sh-rows+j;
-              const left=bone.ax+(x*W/525-bone.ax)*flare;
-              ctx.drawImage(atlas,sx,sy+srcY,sw,1,left,(y+srcY)*H/913,sw*W/525*flare,H/913+.12);
-            }
+            ctx.drawImage(collar,(x-collarPad)*W/525,y*H/913,collar.width*W/525,sh*H/913);
+          }else{
+            ctx.drawImage(atlas,sx,sy,sw,sh,x*W/525,y*H/913,sw*W/525,sh*H/913);
           }
         });
         // Early shoots carry fine needle pairs while the photographed tufts unfurl.
@@ -119,9 +135,154 @@
     };
   }
 
+  // The root tips live under the soil. Each ridge uses the same path and growth
+  // front for its displaced soil, settling clods and intermittently exposed bark.
+  const rootBed={left:-105,top:-31,width:207,height:76};
+  const rootPaths=[
+    {points:[[-5,-3],[-23,1],[-48,13],[-91,9]],start:.11,end:.88,radius:7.2},
+    {points:[[5,-4],[24,-3],[40,10],[79,15]],start:.19,end:.96,radius:6.4},
+    {points:[[0,-3],[4,6],[-13,21],[-29,35]],start:.29,end:1,radius:5.2},
+    {points:[[5,-3],[19,-9],[36,-13],[59,-20]],start:.4,end:.94,radius:4.3}
+  ];
+  const smoothStep=(lo,hi,x)=>{
+    const t=clamp((x-lo)/(hi-lo));
+    return t*t*(3-2*t);
+  };
+  function rootSamples(root,index){
+    const [a,b,c,d]=root.points;
+    const samples=[];
+    for(let n=0;n<=48;n++){
+      const t=n/48,s=1-t;
+      const coord=k=>s*s*s*a[k]+3*s*s*t*b[k]+3*s*t*t*c[k]+t*t*t*d[k];
+      samples.push({
+        x:coord(0), y:coord(1)+Math.sin(t*13+index)*Math.sin(t*Math.PI)*1.6,
+        t,r:root.radius*(1-t*.87)
+      });
+    }
+    return samples;
+  }
+  function rootField(w,h){
+    const fields=[];
+    rootPaths.forEach((path,index)=>{
+      const samples=rootSamples(path,index);
+      const dist=new Float32Array(w*h).fill(Infinity);
+      const time=new Float32Array(w*h), side=new Float32Array(w*h);
+      for(let n=1;n<samples.length;n++){
+        const a=samples[n-1],b=samples[n];
+        const dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy);
+        const edge=a.r*3.2;
+        const left=Math.max(0,Math.floor((Math.min(a.x,b.x)-edge-rootBed.left)*w/rootBed.width));
+        const right=Math.min(w,Math.ceil((Math.max(a.x,b.x)+edge-rootBed.left)*w/rootBed.width));
+        const top=Math.max(0,Math.floor((Math.min(a.y,b.y)-edge-rootBed.top)*h/rootBed.height));
+        const bottom=Math.min(h,Math.ceil((Math.max(a.y,b.y)+edge-rootBed.top)*h/rootBed.height));
+        for(let y=top;y<bottom;y++)for(let x=left;x<right;x++){
+          const vx=rootBed.left+(x+.5)*rootBed.width/w-a.x;
+          const vy=rootBed.top+(y+.5)*rootBed.height/h-a.y;
+          const u=clamp((vx*dx+vy*dy)/(length*length));
+          const r=a.r+u*(b.r-a.r);
+          const distance=Math.hypot(vx-u*dx,vy-u*dy)/r,i=y*w+x;
+          if(distance>=dist[i])continue;
+          time[i]=a.t+u*(b.t-a.t);
+          dist[i]=distance;
+          side[i]=(vy*dx-vx*dy)/(length*r);
+        }
+      }
+      fields.push({path,dist,time,side});
+    });
+    return fields;
+  }
+  function rootGround(canvas,photo){
+    const ctx=canvas.getContext('2d');
+    if(!ctx)return null;
+    let key='', fields,earth,bark,frame,grain,gain,lastGrowth;
+    const source=document.createElement('canvas');
+    const sampler=source.getContext('2d',{willReadFrequently:true});
+    function prepare(w,h,tree,bounds,plate){
+      const unit=tree.height/H;
+      const left=tree.left-bounds.left+tree.width*168/W+rootBed.left*unit;
+      const top=tree.top-bounds.top+tree.height*.994+rootBed.top*unit;
+      const width=rootBed.width*unit,height=rootBed.height*unit;
+      const layout=[w,h,left.toFixed(2),top.toFixed(2),bounds.width,bounds.height,plate.src].join('/');
+      if(key===layout)return;
+      key=layout;lastGrowth=-1;
+      Object.assign(canvas.style,{left:left+'px',top:top+'px',width:width+'px',height:height+'px'});
+      canvas.width=source.width=w;canvas.height=source.height=h;
+      const cover=Math.max(bounds.width/plate.width,bounds.height/plate.height);
+      const pw=plate.width*cover,ph=plate.height*cover;
+      sampler.setTransform(w/width,0,0,h/height,-left*w/width,-top*h/height);
+      sampler.drawImage(plate,(bounds.width-pw)/2,bounds.height-ph,pw,ph);
+      // Match the lighting overlay on the underlying CSS background.
+      const light=sampler.createLinearGradient(0,0,0,bounds.height);
+      light.addColorStop(0,'#101d1a44');light.addColorStop(.32,'transparent');
+      light.addColorStop(.83,'transparent');light.addColorStop(1,'#101b1240');
+      sampler.fillStyle=light;sampler.fillRect(left,top,width,height);
+      try{
+        earth=sampler.getImageData(0,0,w,h).data;
+        if(!bark){
+          const strip=document.createElement('canvas');strip.width=18;strip.height=110;
+          const ink=strip.getContext('2d');ink.drawImage(photo,245,775,18,110,0,0,18,110);
+          bark=ink.getImageData(0,0,18,110).data;
+        }
+      }catch{earth=null;return;}
+      fields=rootField(w,h);frame=ctx.createImageData(w,h);
+      grain=new Float32Array(w*h);gain=new Float32Array(w*h);
+      for(let i=0;i<w*h;i++){
+        const k=i*4,near=Math.max(0,i-w)*4;
+        grain[i]=Math.min(1,Math.max(-1,(earth[k]-earth[near])/48));
+        gain[i]=.84+.22*Math.min(1,earth[k]/130);
+      }
+    }
+    return function draw(tree,bounds,plate,growth){
+      if(!plate?.naturalWidth||!photo.naturalWidth)return;
+      const density=Math.min(1.6,(devicePixelRatio||1)*tree.height/H);
+      const w=Math.max(2,Math.round(rootBed.width*density)),h=Math.max(2,Math.round(rootBed.height*density));
+      prepare(w,h,tree,bounds,plate);
+      if(!earth||lastGrowth===growth)return;
+      lastGrowth=growth;
+      const pixels=frame.data;
+      pixels.fill(0);
+      const fronts=fields.map(({path})=>smoothStep(path.start,path.end,growth));
+      for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+        const i=y*w+x,j=i*4;
+        let lift=0,exposed=0,along=0,across=0,bank=0;
+        fields.forEach((field,r)=>{
+          const d=field.dist[i];if(d>3||!fronts[r])return;
+          const t=field.time[i],wide=fronts[r]*1.16-t;
+          const onset=smoothStep(-.085,.13,wide);
+          if(!onset)return;
+          const settle=smoothStep(.045,.28,wide);
+          const radial=Math.max(0,1-d/3);
+          const pressure=onset*(1-.42*settle)*(1-.67*t)*radial*radial;
+          const reveal=onset*settle*(1-smoothStep(.62,.98,t));
+          const edge=d/(.3+.68*reveal)+.23*grain[i];
+          const skin=reveal*(1-smoothStep(.55,1.08,edge))*
+            (.75+.25*Math.cos(t*15+r))*(1-.72*t);
+          if(pressure>lift){lift=pressure;bank=field.side[i];}
+          if(skin>exposed){exposed=skin;along=t;across=field.side[i];}
+        });
+        if(lift<.004)continue;
+        // Read farther down the plate to lift its original specks and needles.
+        const ox=Math.max(0,Math.min(w-2,x-lift*bank*density*1.8));
+        const oy=Math.max(0,Math.min(h-2,y+lift*density*(5.8+grain[i])));
+        const ix=Math.floor(ox),iy=Math.floor(oy),a=ox-ix,b=oy-iy,n=(iy*w+ix)*4;
+        const relief=1+lift*(.13-.25*Math.min(1,Math.max(-1,bank)));
+        const bx=Math.min(17,Math.max(0,Math.round(9+7*across)));
+        const by=(Math.floor(along*280)+Math.round(2*grain[i])+110)%110;
+        for(let c=0;c<3;c++){
+          const soil=(earth[n+c]*(1-a)+earth[n+4+c]*a)*(1-b)+
+            (earth[n+4*w+c]*(1-a)+earth[n+4*w+4+c]*a)*b;
+          const wood=bark[(by*18+bx)*4+c]*gain[i];
+          pixels[j+c]=soil*relief*(1-exposed)+wood*exposed;
+        }
+        pixels[j+3]=Math.round(255*smoothStep(.004,.13,lift));
+      }
+      ctx.putImageData(frame,0,0);
+    };
+  }
+
   // Work in the ground plane. A wide, shallow buffer keeps the soil pass independent
   // of display pixel ratio, including on high-density phones.
-  function groundLighting(stage,canvas,refresh){
+  function groundLighting(stage,canvas,refresh,drawRoots){
     const out=canvas.getContext('2d');
     if(!out)return null;
     const layer=()=>document.createElement('canvas');
@@ -170,6 +331,7 @@
         const scale=Math.min(1,800/bounds.width);
         const w=Math.max(1,Math.round(bounds.width*scale)),h=Math.max(1,Math.round(band.height*scale));
         prepare(w,h,bounds,top,scale);
+        drawRoots?.(tree,bounds,plate,growth);
         const tw=tree.width*scale, th=tree.height*scale;
         const rootX=(tree.left-bounds.left)*scale+tw*168/345;
         const rootY=(tree.top-bounds.top-top)*scale+th*.994;
@@ -226,13 +388,14 @@
       this.motion=matchMedia('(prefers-reduced-motion: reduce)');
       const opts={signal:this.life.signal,passive:true};
       const queue=()=>{if(this.visible && !this.frame)this.frame=requestAnimationFrame(()=>{this.frame=0;this.paint();});};
-      this.light=groundLighting(this.stage,this.querySelector('.grove-ground-shadow'),queue);
       this.specimen=this.tree.querySelector('.grove-specimen');
       this.photo=this.tree.querySelector('img');
+      const drawRoots=rootGround(this.querySelector('.grove-root-bed'),this.photo);
+      this.light=groundLighting(this.stage,this.querySelector('.grove-ground-shadow'),queue,drawRoots);
       this.photo.addEventListener('load',queue,opts);
       const atlas=new Image();
       const init=()=>{
-        if(!this.visible || this.tried || this.motion.matches)return;
+        if(!this.visible || this.tried)return;
         if(!atlas.src){atlas.src='assets/branches-afternoon.webp';return;}
         if(!atlas.naturalWidth)return;
         this.tried=true;

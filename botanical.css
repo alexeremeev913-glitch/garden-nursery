@@ -99,12 +99,13 @@ pine-grove { display:block; position:relative; height:290vh; height:290svh; marg
   position:sticky; top:0; height:100vh; height:100svh; overflow:hidden; isolation:isolate;
   background:var(--grove-light),var(--grove-photo) center bottom / cover;
 }
+.grove-root-bed { position:absolute; pointer-events:none; width:0; height:0; }
 .grove-ground-shadow { position:absolute; left:0; bottom:0; width:100%; height:30%; pointer-events:none; mix-blend-mode:multiply; }
 .grove-head { position:absolute; z-index:2; left:5.5%; top:7%; }
 .grove-head .eyebrow { color:#daeab1; font:600 10px/1.4 Arial,sans-serif; letter-spacing:.15em; margin-bottom:14px; }
 .grove-head h2 { font-size:clamp(35px,4.5vw,80px); line-height:.97; }
 .grove-head em { color:#e2edc2; }
-.grove-tree { position:absolute; bottom:var(--ground); left:var(--plant-x); height:min(74%,86vw); aspect-ratio:345/600; transform:translateX(-50%); }
+.grove-tree { position:absolute; bottom:var(--ground); left:var(--plant-x); height:min(82%,97vw); aspect-ratio:363/600; transform:translateX(-50%); }
 .grove-tree img,.grove-tree canvas { position:absolute; inset:0; width:100%; height:100%; }
 .grove-tree canvas { visibility:hidden; }
 .grove-tree.live img { visibility:hidden; }
@@ -130,7 +131,7 @@ pine-grove { display:block; position:relative; height:290vh; height:290svh; marg
 @media(max-width:720px) {
   pine-grove { height:245svh; }
   .grove-stage { --plant-x:51%; --ground:16%; }
-  .grove-tree { height:min(64%,135vw); }
+  .grove-tree { height:min(72%,153vw); }
   .grove-head { left:5%; top:5%; }
   .grove-note { max-width:37%; padding:6px 8px; }
   .grove-note strong { font-size:clamp(16px,3.9vw,22px); }
