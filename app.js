@@ -22,96 +22,27 @@ function footer(){return `<footer class="footer"><div class="wrap foot-grid"><di
 function card(p){return `<article class="product"><a class="product-photo" href="${url('product','id='+p.id)}">${image(p.img,p.name)}</a>${p.tag?`<span class="tag ${p.tag==='Акция'?'sale':''}">${p.tag}</span>`:''}<button class="heart ${fav.includes(p.id)?'on':''}" aria-label="Избранное" aria-pressed="${fav.includes(p.id)}" data-fav="${p.id}" onclick="toggleFav(${p.id})">${fav.includes(p.id)?'♥':'♡'}</button><div class="product-body"><a href="${url('product','id='+p.id)}"><h3>${p.name}</h3></a><div class="price">от ${money(p.price)}${p.tag==='Акция'?'<span class="old">2 990 ₽</span>':''}</div><div class="buyline"><div class="stepper"><button aria-label="Уменьшить" onclick="changeCard(${p.id},-1,this)">−</button><span>${quantities[p.id]||1}</span><button aria-label="Увеличить" onclick="changeCard(${p.id},1,this)">+</button></div><button class="mini" aria-label="В корзину" onclick="add(${p.id},0,quantities[${p.id}]||1)">${icon('cart')}</button></div></div></article>`}
 function cards(list){return list.length?`<div class="grid">${list.map(card).join('')}</div>`:`<div class="empty"><h2>Ничего не найдено</h2><p>Попробуйте изменить условия поиска.</p>${btn('catalog','Весь каталог')}</div>`}
 const benefit=(n,t)=>`<div class="strip-item">${icon(n)}<span>${t}</span></div>`;const crumb=t=>`<div class="crumb">${link('home','Главная')} / ${t}</div>`;const pageHead=(t,desc='')=>`<div class="pagehead"><h1>${t}</h1>${desc?`<p>${desc}</p>`:''}</div>`;
-const pineChapters = [
-  { label: 'Питомник', title: 'Сад начинается<br><em>с малого.</em>', copy: 'В нашем каталоге — хвойные, лиственные кустарники, многолетники и декоративные деревья.' },
-  { label: 'Подбор растений', title: 'Каждому дереву<br><em>своё место.</em>', copy: 'Солнечная поляна или полутень у дома? В каталоге можно подобрать растения под освещение вашего участка.' },
-  { label: 'Ваш сад', title: 'У сада есть<br><em>характер.</em>', copy: 'Сохраните понравившиеся растения в избранное. Если сомневаетесь в выборе, задайте вопрос питомнику.' }
-];
-
-function pineScene() {
-  return `<pine-story aria-label="О питомнике" role="region">
-    <div class="pine-stage">
-      <div class="pine-land" aria-hidden="true"></div>
-      <div class="pine-specimen" aria-hidden="true">
-        ${['seedling','sapling','crown'].map(name => `<img class="pine-form" src="assets/pine-${name}.webp" alt="">`).join('')}
-      </div>
-      <div class="pine-inner">
-        <div class="pine-copy">
-          <span class="pine-kicker">Питомник декоративных растений</span>
-          <div class="pine-pages">${pineChapters.map(({title,copy},i) => `<div class="pine-page"><h${i ? 2 : 1}>${title}</h${i ? 2 : 1}><p>${copy}</p></div>`).join('')}</div>
-          <div class="pine-actions">${link('catalog','Выбрать растения <span aria-hidden="true">→</span>','btn light')}${link('about','О питомнике','pine-link')}</div>
-        </div>
-        <span class="pine-species"><i>Pinus sylvestris</i>Сосна обыкновенная</span>
-        <div class="pine-footer"><span class="pine-scroll">Листайте вниз ↓</span>
-          <div class="pine-chapters" aria-label="Этапы истории">${pineChapters.map(({label},i) => `<button type="button" data-chapter="${i}"><span class="pine-rule"></span>${label}</button>`).join('')}</div>
-        </div>
-      </div>
-    </div>
-  </pine-story>`;
+function pineScene(){
+ const notes=[
+  ['Консультация специалиста','Обсудить посадку и уход','contacts','consult=1'],
+  ['Ваш сад','Подобрать растения для участка','catalog',''],
+  ['Доставка по России','Уточнить условия для вашего региона','delivery','']
+ ];
+ return `<pine-grove id="about-grove" role="region" aria-labelledby="grove-title"><div class="grove-stage">
+  <header class="grove-head"><div class="eyebrow">О питомнике</div><h2 id="grove-title">От саженца<br><em>до вашего сада.</em></h2></header>
+  <div class="grove-tree" aria-hidden="true"><img src="assets/nursery-pine.webp" loading="lazy" alt=""><canvas></canvas></div>
+  <div class="grove-notes">${notes.map(([label,description,page,query])=>`<a class="grove-note" href="${url(page,query)}"><strong>${label}</strong><small>${description} →</small></a>`).join('')}</div>
+  <div class="grove-foot"><span><i>Pinus sylvestris</i>Сосна обыкновенная</span><span class="grove-hint">Листайте, чтобы увидеть рост ↓</span></div>
+ </div></pine-grove>`
 }
-
-class PineStory extends HTMLElement {
-  connectedCallback() {
-    this.stage = this.querySelector('.pine-stage');
-    this.forms = [...this.querySelectorAll('.pine-form')];
-    this.pages = [...this.querySelectorAll('.pine-page')];
-    this.buttons = [...this.querySelectorAll('[data-chapter]')];
-    this.motion = matchMedia('(prefers-reduced-motion: reduce)');
-    this.life = new AbortController();
-    const options = {passive:true, signal:this.life.signal};
-    const draw = () => {
-      if (!this.frame) this.frame = requestAnimationFrame(() => {
-        this.frame = 0;
-        this.paint();
-      });
-    };
-    window.addEventListener('scroll',draw,options);
-    window.addEventListener('resize',draw,options);
-    this.motion.addEventListener('change',draw,options);
-    this.buttons.forEach((button,i) => button.addEventListener('click',() => {
-      const top = scrollY + this.getBoundingClientRect().top;
-      scrollTo({top:top + (this.offsetHeight - this.stage.offsetHeight) * [0,.5,.96][i],behavior:'smooth'});
-    },options));
-    this.paint();
-  }
-  disconnectedCallback() {
-    this.life.abort();
-    cancelAnimationFrame(this.frame);
-    this.frame = 0;
-  }
-  paint() {
-    const clamp = n => Math.max(0,Math.min(1,n));
-    const rect = this.getBoundingClientRect();
-    const reduced = this.motion.matches;
-    const p = reduced ? 1 : clamp(-rect.top / Math.max(1,rect.height - this.stage.offsetHeight));
-    if (p === this.lastProgress && reduced === this.lastReduced) return;
-    this.lastProgress = p;
-    this.lastReduced = reduced;
-    const blend = (start,end) => {
-      const t = clamp((p-start)/(end-start));
-      return t*t*(3-2*t);
-    };
-    const young = blend(.22,.38), mature = blend(.58,.78);
-    this.forms.forEach((img,i) => {
-      img.style.opacity = [1-young,young-mature,mature][i];
-    });
-    this.style.setProperty('--tree-scale',(.28 + .72*p).toFixed(4));
-    this.style.setProperty('--land-scale',(1.045 - .045*p).toFixed(4));
-    const second = blend(.26,.35), third = blend(.64,.73);
-    const weights = [1-second,second-third,third];
-    const active = weights.indexOf(Math.max(...weights));
-    this.pages.forEach((page,i) => {
-      page.style.opacity = reduced ? 1 : weights[i];
-      page.style.translate = reduced ? 'none' : '0 '+ ((1-weights[i])*(i<active ? -12 : 12)) +'px';
-      page.setAttribute('aria-hidden',String(!reduced && i!==active));
-      this.buttons[i].setAttribute('aria-current',String(i===active));
-    });
-  }
-}
-customElements.define('pine-story', PineStory);
-
-function home(){return `${pineScene()}<div class="wrap"><section class="section collections"><div class="section-head"><h2>Коллекции сада</h2>${link('catalog','Весь каталог →','link')}</div>
- <div class="category-layout">${cats.map(([name,key])=>`<a class="category" href="${url('catalog','cat='+key)}">${image(key,'')}<strong>${name}</strong><span aria-hidden="true">→</span></a>`).join('')}</div></section><section class="section"><div class="section-head"><h2>Популярные растения</h2>${link('catalog','Смотреть все →','link')}</div><div class="popular-layout">${cards(data.slice(0,4))}<aside class="promo"><div class="eyebrow">Сезонное предложение</div><h2>Растения со скидкой</h2><p>Специальные цены на отдельные растения</p>${link('catalog','Выбрать →','btn light','sale=1')}</aside></div><p class="demo">Демонстрационные цены и изображения растений.</p></section><section class="section"><div class="consult">${image('consult','Специалист питомника')}<div><div class="eyebrow">Нужна помощь?</div><h2>Консультация специалиста</h2><p>Поможем подобрать растения для вашего участка</p>${btn('contacts','Задать вопрос','consult=1')}</div><div class="stat"><b>Ваш сад</b><small>Подбор по освещению, размеру и стилю участка</small></div></div></section><section class="delivery-banner"><div><h2>Удобная доставка<br>по всей России</h2><p>Условия и возможность доставки уточняются индивидуально.</p></div>${link('delivery','Узнать условия доставки →','btn light')}</section></div>`}
+function home(){return `<section class="hero">
+ <div class="wrap hero-inner"><div class="hero-copy"><div class="eyebrow">Питомник декоративных растений</div>
+ <h1>У сада есть<br><em>характер.</em></h1>
+ <p>Хвойные, деревья и цветущие многолетники. Соберите сад, который будет вашим.</p>
+ <div class="hero-buttons">${link('catalog','Выбрать растения <span aria-hidden="true">→</span>','btn light')}${link('about','О питомнике','hero-about')}</div></div></div>
+ <div class="cover-index wrap"><span>Коллекции</span>${cats.map(([name,key])=>link('catalog',name,'','cat='+key)).join('')}</div>
+ </section><div class="wrap"><section class="section collections"><div class="section-head"><h2>Коллекции сада</h2>${link('catalog','Весь каталог →','link')}</div>
+ <div class="category-layout">${cats.map(([name,key])=>`<a class="category" href="${url('catalog','cat='+key)}">${image(key,'')}<strong>${name}</strong><span aria-hidden="true">→</span></a>`).join('')}</div></section><section class="section"><div class="section-head"><h2>Популярные растения</h2>${link('catalog','Смотреть все →','link')}</div><div class="popular-layout">${cards(data.slice(0,4))}<aside class="promo"><div class="eyebrow">Сезонное предложение</div><h2>Растения со скидкой</h2><p>Специальные цены на отдельные растения</p>${link('catalog','Выбрать →','btn light','sale=1')}</aside></div><p class="demo">Демонстрационные цены и изображения растений.</p></section></div>${pineScene()}`}
 function plantKind(p){return ({1:'spruce',2:'hydrangea',3:'spirea',4:'thuja',5:'echinacea',6:'pine',7:'spruce',8:'hydrangea'})[p.id]||'other'}
 function catalogTree(params){const names={spruce:'Ели',hydrangea:'Гортензии',spirea:'Спиреи',thuja:'Туи',echinacea:'Эхинацеи',pine:'Сосны',other:'Другие растения'};return `<nav class="catalog-tree" aria-label="Разделы каталога">${link('catalog','<span>Все растения</span><small>'+data.length+'</small>','tree-all '+(!params.get('cat')&&!params.get('kind')?'tree-active':''))}${cats.map(([name,key])=>{const plants=data.filter(p=>p.cat===key),kinds=[...new Set(plants.map(plantKind))];return `<details ${params.get('cat')===key?'open':''}><summary><span>${name}</span><small>${plants.length}</small></summary><div class="tree-children">${link('catalog','Все в разделе','tree-child '+(params.get('cat')===key&&!params.get('kind')?'tree-active':''),'cat='+key)}${kinds.map(k=>link('catalog',names[k]+' <small>'+plants.filter(p=>plantKind(p)===k).length+'</small>','tree-child '+(params.get('cat')===key&&params.get('kind')===k?'tree-active':''),'cat='+key+'&kind='+k)).join('')}</div></details>`}).join('')}</nav>`}
 function catalog(params){return `<div class="wrap section premium-catalog">${crumb('Каталог')}<div class="catalog-title"><div><div class="eyebrow">Коллекция для вашего сада</div><h1>Каталог растений</h1><p>Найдите подходящее растение по виду, условиям выращивания и стоимости.</p></div><div class="catalog-count"><b>${data.length}</b><span>демо-позиций</span></div></div><div class="catalog-layout"><aside class="filters premium-filters"><div class="filter-heading"><h3>Каталог</h3><span>Разделы</span></div>${catalogTree(params)}<hr><div class="filter-heading"><h3>Подбор растений</h3><span>Фильтры</span></div><div class="filtergroup cat-checks">${cats.map(([n,k])=>`<label><input type="checkbox" name="cat" value="${k}" ${params.get('cat')===k?'checked':''}>${n}</label>`).join('')}</div><hr><h3>Цена до, ₽</h3><input class="field" id="maxprice" type="number" min="0" placeholder="Любая цена"><hr><h3>Освещение</h3><div class="filtergroup"><label><input type="checkbox" name="light" value="Солнце">Солнце</label><label><input type="checkbox" name="light" value="Полутень">Полутень</label></div><hr><h3>Морозостойкость</h3><label><input type="checkbox" name="hardy" value="Высокая">Высокая</label><hr><label><input type="checkbox" id="sale" ${params.get('sale')?'checked':''}>Только акции</label><button class="btn outline" onclick="resetFilters()">Сбросить фильтры</button></aside><section class="catalog-content"><div class="catalog-searchbar"><div class="toolbar"><input class="field" id="query" type="search" placeholder="Найти растение или сорт…" aria-label="Поиск растений"><select class="field" id="sort" aria-label="Сортировка"><option value="default">По популярности</option><option value="low">Сначала дешевле</option><option value="high">Сначала дороже</option><option value="name">По названию</option></select></div><p id="results" class="note"></p></div><div id="cataloglist"></div><p class="note">Демонстрационный ассортимент, цены и изображения.</p></section></div></div>`}
@@ -209,7 +140,7 @@ function decorateGarden(){
  }
 }
 async function gardenIntro(){
- if(storage.get('intro_seen',false)||portable||route().page!=='home'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ if(location.hash==='#about-grove'||storage.get('intro_seen',false)||portable||route().page!=='home'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
  const navigation=performance.getEntriesByType?.('navigation')?.[0]?.type;
  if(navigation==='back_forward')return;
  storage.set('intro_seen',true);
