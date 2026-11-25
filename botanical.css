@@ -1,0 +1,93 @@
+:root {
+  --ink: #182a23;
+  --green: #25483a;
+  --lime: #d7f392;
+  --paper: #f6f5ef;
+  --line: #d9ded1;
+}
+body { font-family: "Helvetica Neue", Arial, sans-serif; }
+.wrap { width: min(1440px, 89%); }
+.header { background: #f6f5eff5; }
+.nav { min-height: 78px; }
+.brand { gap: 9px; min-width: auto; font: 500 19px/1 Georgia, serif; letter-spacing: -.045em; }
+.botanical-mark { font: 34px/1 Arial,sans-serif; color: #73883f; }
+.home .header { background: transparent; }
+.home .nav { border-bottom: 1px solid #ffffff42; }
+.home .brand .botanical-mark, .footer .botanical-mark { color: var(--lime); }
+.home .count { background: var(--lime); color: #203423; }
+.hero {
+  min-height: clamp(620px, 84svh, 900px);
+  background: #0b2219;
+  display: grid;
+  align-content: center;
+}
+.hero::before {
+  inset: -3%;
+  background: linear-gradient(90deg, #081c14d9, #081c1440 51%, transparent 79%), url('assets/pine-cover.webp') center/cover;
+  animation: none;
+  translate: calc(var(--garden-x,0px) * .23) calc(var(--garden-y,0px) * .23);
+}
+.hero .garden-ambient { display: none; }
+.hero-inner { display: block; padding: 94px 0 102px; }
+.hero .eyebrow { display: flex; align-items: center; gap: 12px; color: #e0ebcd; font-size: 10px; letter-spacing: .18em; }
+.hero .eyebrow::before { content: ''; width: 30px; height: 1px; background: currentColor; }
+.hero h1 { font-size: clamp(76px, 8.6vw, 146px); line-height: .91; letter-spacing: -.07em; margin: 26px 0; }
+.hero h1 em { color: #d9eeab; font-weight: 400; font-style: italic; }
+.hero p { max-width: 385px; color: #e5e9df; line-height: 1.55; font-size: 16px; }
+.hero-buttons { align-items: center; gap: 25px; }
+.btn { min-height: 42px; }
+.hero-buttons .light { background: var(--lime); color: #1c3020; padding: 8px 9px 8px 21px; gap: 22px; }
+.hero-buttons .light span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #263e2a; color: white; font-size: 18px; }
+.hero-about { color: white; font-size: 14px; border-bottom: 1px solid #ffffff88; }
+.cover-index { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 21px 0; border-top: 1px solid #ffffff57; font-size: 13px; }
+.cover-index > span { color: #dae6ba; text-transform: uppercase; font-size: 10px; letter-spacing: .16em; }
+.cover-index a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.home .section { padding: clamp(36px,5vw,78px) 0 12px; }
+.home .section-head { margin-bottom: 24px; }
+.section-head h2 { font-size: clamp(34px,4.4vw,66px); }
+.category-layout { grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 14px; }
+.category { min-height: clamp(190px,19vw,310px); border-radius: 4px; padding: 18px; justify-content: space-between; gap: 8px; }
+.category strong { font: 400 clamp(20px,1.7vw,28px)/1.08 Georgia,serif; letter-spacing: -.035em; }
+.category span { flex: none; font-size: 16px; }
+.category::after { background: linear-gradient(transparent 23%,#0f2117d9); }
+.product { border-radius: 6px; box-shadow: none; }
+.product-body { padding: 16px; }
+.editorial-hero,.consult,.delivery-banner { border-radius: 8px; }
+.home .delivery-banner { margin-top: 38px; }
+.footer { background: #152b22; }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hero { view-timeline-name: --cover; }
+    .hero::before { animation: canopy-shift linear both; animation-timeline: --cover; animation-range: exit; }
+    @keyframes canopy-shift { to { transform: translateY(9%) scale(1.13); } }
+    .home .category { animation: plant-arrive linear both; animation-timeline: view(); animation-range: entry 0% entry 85%; }
+    @keyframes plant-arrive { from { clip-path: inset(8% 0 0); } to { clip-path: inset(0); } }
+  }
+}
+@media(max-width:1000px) {
+  .nav { gap: 10px; }
+  .navlinks { gap: 12px; }
+  .category-layout { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:720px) {
+  .wrap { width: 91%; }
+  .nav { min-height: 65px; }
+  .brand { font-size: 16px; gap: 4px; }
+  .botanical-mark { font-size: 27px; }
+  .hero { min-height: clamp(570px,81svh,720px); }
+  .hero::before { background-image: linear-gradient(0deg,#081e16f2 3%,#081e1680 65%,#081e1640),url('assets/pine-cover.webp'); background-position: 66% center; }
+  .hero-inner { padding: 130px 0 60px; }
+  .hero h1 { font-size: clamp(68px,15.5vw,102px); }
+  .hero p { font-size: 15px; max-width: 320px; }
+  .hero-buttons { gap: 18px; }
+  .cover-index { display: none; }
+  .category { min-height: 170px; padding: 12px; }
+  .category-layout { gap: 9px; }
+  .category strong { font-size: 21px; }
+  .home.menu-open .header { background: var(--paper); color: var(--ink); }
+  .home.menu-open .botanical-mark { color: var(--green); }
+}
+.home .header { background: linear-gradient(#091c15a8, #091c152e); }
+@media(max-width:720px) {
+  .home.menu-open .header { background: var(--paper); }
+}
