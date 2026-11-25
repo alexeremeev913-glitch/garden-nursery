@@ -65,7 +65,8 @@
 
   // Atlas rectangles follow bone order: source x, y, width, height and rest-position x, y.
   const patches=[[0, 0, 29, 166, 240, 745], [31, 0, 57, 85, 228, 668], [90, 0, 96, 135, 216, 540], [188, 0, 71, 80, 217, 467], [261, 0, 79, 106, 224, 368], [342, 0, 76, 79, 220, 296], [420, 0, 77, 93, 213, 211], [499, 0, 70, 92, 222, 127], [571, 0, 47, 131, 247, 3], [620, 0, 57, 47, 203, 706], [679, 0, 79, 51, 138, 690], [760, 0, 87, 67, 64, 677], [849, 0, 58, 62, 21, 669], [909, 0, 45, 50, 253, 702], [0, 168, 70, 43, 284, 693], [72, 168, 105, 98, 337, 638], [179, 168, 128, 106, 392, 614], [309, 168, 50, 37, 253, 724], [361, 168, 123, 37, 293, 724], [486, 168, 63, 39, 197, 724], [551, 168, 83, 22, 125, 724], [636, 168, 60, 58, 201, 656], [698, 168, 85, 75, 128, 637], [785, 168, 93, 78, 57, 619], [880, 168, 95, 92, 4, 582], [0, 276, 65, 71, 254, 618], [67, 276, 72, 82, 296, 622], [141, 276, 95, 121, 341, 640], [238, 276, 47, 67, 215, 609], [287, 276, 90, 77, 153, 576], [379, 276, 98, 68, 77, 575], [479, 276, 54, 56, 211, 492], [535, 276, 95, 79, 132, 467], [632, 276, 101, 102, 59, 451], [735, 276, 115, 140, 6, 383], [852, 276, 60, 41, 257, 515], [914, 276, 84, 74, 305, 517], [0, 418, 89, 99, 373, 515], [91, 418, 88, 75, 427, 492], [181, 418, 50, 46, 214, 530], [233, 418, 68, 55, 160, 530], [303, 418, 112, 50, 66, 535], [417, 418, 74, 63, 257, 540], [493, 418, 119, 93, 295, 554], [614, 418, 65, 76, 198, 421], [681, 418, 94, 83, 141, 406], [777, 418, 94, 113, 81, 356], [873, 418, 91, 78, 48, 331], [966, 418, 53, 61, 255, 417], [0, 533, 86, 87, 288, 392], [88, 533, 99, 93, 345, 389], [189, 533, 84, 76, 404, 358], [275, 533, 50, 53, 256, 467], [327, 533, 79, 59, 288, 469], [408, 533, 87, 77, 332, 470], [497, 533, 47, 51, 216, 325], [546, 533, 105, 70, 131, 305], [653, 533, 84, 92, 116, 270], [739, 533, 65, 76, 255, 322], [806, 533, 85, 106, 282, 292], [893, 533, 93, 72, 328, 278], [0, 641, 81, 70, 359, 252], [83, 641, 55, 48, 208, 360], [140, 641, 83, 58, 146, 360], [225, 641, 50, 70, 211, 252], [277, 641, 71, 98, 167, 220], [350, 641, 90, 79, 106, 215], [442, 641, 82, 82, 79, 185], [526, 641, 62, 65, 254, 256], [590, 641, 75, 72, 275, 238], [667, 641, 57, 60, 301, 222], [726, 641, 60, 68, 204, 170], [788, 641, 68, 96, 178, 137], [858, 641, 69, 57, 149, 121], [929, 641, 59, 55, 143, 98], [0, 741, 45, 52, 257, 199], [47, 741, 77, 61, 291, 188], [126, 741, 75, 73, 326, 169], [203, 741, 37, 37, 257, 182], [242, 741, 71, 63, 268, 146], [315, 741, 54, 44, 288, 129], [371, 741, 51, 45, 213, 107], [424, 741, 60, 62, 192, 84], [486, 741, 39, 44, 201, 62], [527, 741, 47, 46, 257, 106], [576, 741, 51, 61, 271, 75], [629, 741, 42, 44, 282, 54], [673, 741, 30, 53, 235, 82], [705, 741, 33, 42, 228, 53], [740, 741, 30, 38, 226, 34]];
-  function createSurface(canvas,atlas){
+  function createSurface(canvas,shadow,atlas){
+    const shadowCtx=shadow.getContext('2d');
     const ctx=canvas.getContext('2d');
     if(!ctx)return null;
     return {
@@ -87,6 +88,16 @@
           ctx.setTransform(w/W*a,h/H*b,w/W*c,h/H*d,
             w/W*(bone.ox-a*bone.ax-c*bone.ay),h/H*(bone.oy-b*bone.ax-d*bone.ay));
           ctx.drawImage(atlas,sx,sy,sw,sh,x*W/525,y*H/913,sw*W/525,sh*H/913);
+          if(i===0){
+            // Widen the lowest bark rings into a root collar, keeping their grain continuous.
+            const rows=Math.min(sh,32);
+            for(let j=0;j<rows;j++){
+              const flare=1+.58*(j/rows)**2;
+              const srcY=sh-rows+j;
+              const left=bone.ax+(x*W/525-bone.ax)*flare;
+              ctx.drawImage(atlas,sx,sy+srcY,sw,1,left,(y+srcY)*H/913,sw*W/525*flare,H/913+.12);
+            }
+          }
         });
         // Early shoots carry fine needle pairs while the photographed tufts unfurl.
         ctx.setTransform(w/W,0,0,h/H,0,0);
@@ -103,6 +114,14 @@
             ctx.strokeStyle=['#88a86a','#b3c879','#566f47'][j%3];
             ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+Math.cos(angle)*length*.5,y-1.8*strength,x+Math.cos(angle)*length,y+Math.sin(angle)*length);ctx.stroke();
           }
+        }
+        if(shadowCtx){
+          const shadowWidth=Math.max(1,Math.round(w/3)),shadowHeight=Math.max(1,Math.round(h/3));
+          if(shadow.width!==shadowWidth || shadow.height!==shadowHeight){
+            shadow.width=shadowWidth;shadow.height=shadowHeight;
+          }
+          shadowCtx.clearRect(0,0,shadow.width,shadow.height);
+          shadowCtx.drawImage(canvas,0,0,shadow.width,shadow.height);
         }
       }
     };
@@ -123,7 +142,7 @@
         if(!atlas.src){atlas.src='assets/pine-branches.webp';return;}
         if(!atlas.naturalWidth)return;
         this.tried=true;
-        this.surface=createSurface(this.tree.querySelector('canvas'),atlas);
+        this.surface=createSurface(this.tree.querySelector('.grove-specimen'),this.tree.querySelector('.grove-shadow'),atlas);
         this.tree.classList.toggle('live',!!this.surface);
         this.classList.toggle('static-grove',!this.surface);
       };

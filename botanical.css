@@ -93,17 +93,48 @@ body { font-family: "Helvetica Neue", Arial, sans-serif; }
 }
 
 pine-grove { display:block; position:relative; height:290vh; height:290svh; margin-top:clamp(40px,6vw,96px); color:#f7f7e9; background:#132b21; }
-.grove-stage { position:sticky; top:0; height:100vh; height:100svh; overflow:hidden; isolation:isolate; background:linear-gradient(0deg,#0a211cd1 0%,transparent 20%),linear-gradient(115deg,#0c221e80,transparent 65%),url('assets/pine-clearing.webp') center bottom/cover; }
+.grove-stage {
+  --plant-x:54%; --ground:15%; --grove-photo:url('assets/grove-soil.webp');
+  --grove-light:linear-gradient(180deg,#101d1a44,transparent 32%,transparent 83%,#101b1288);
+  position:sticky; top:0; height:100vh; height:100svh; overflow:hidden; isolation:isolate;
+  background:var(--grove-light),var(--grove-photo) center bottom / cover;
+}
+/* A few grains of the same foreground soil overlap the buried end of the trunk. */
+.grove-stage::after {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:inherit;
+  clip-path:polygon(
+    calc(var(--plant-x) - 3%) calc(100% - var(--ground) - .26%),
+    calc(var(--plant-x) - 1.5%) calc(100% - var(--ground) - .5%),
+    calc(var(--plant-x) - .9%) calc(100% - var(--ground) - .42%),
+    calc(var(--plant-x) - .7%) calc(100% - var(--ground) - .77%),
+    calc(var(--plant-x) - .4%) calc(100% - var(--ground) - .52%),
+    var(--plant-x) calc(100% - var(--ground) - .66%),
+    calc(var(--plant-x) + .45%) calc(100% - var(--ground) - .41%),
+    calc(var(--plant-x) + 1.5%) calc(100% - var(--ground) - .7%),
+    calc(var(--plant-x) + 2%) calc(100% - var(--ground)),
+    calc(var(--plant-x) - 3%) calc(100% - var(--ground)));
+}
 .grove-head { position:absolute; z-index:2; left:5.5%; top:7%; }
 .grove-head .eyebrow { color:#daeab1; font:600 10px/1.4 Arial,sans-serif; letter-spacing:.15em; margin-bottom:14px; }
 .grove-head h2 { font-size:clamp(35px,4.5vw,80px); line-height:.97; }
 .grove-head em { color:#e2edc2; }
-.grove-tree { position:absolute; bottom:9%; left:54%; height:min(80%,86vw); aspect-ratio:345/600; transform:translateX(-50%); }
-.grove-tree::before { content:''; position:absolute; bottom:-1%; left:28%; width:43%; height:2%; background:radial-gradient(ellipse,#111b0bc9,transparent 68%); transform:scaleX(var(--root-shadow,1)); }
+.grove-tree { position:absolute; bottom:var(--ground); left:var(--plant-x); height:min(74%,86vw); aspect-ratio:345/600; transform:translateX(-50%); }
+.grove-tree::before { content:''; position:absolute; bottom:0; left:32%; width:32%; height:2%; background:radial-gradient(ellipse,#170f0aff,transparent 69%); transform:scaleX(var(--root-shadow,1)); }
 .grove-tree img,.grove-tree canvas { position:absolute; inset:0; width:100%; height:100%; }
 .grove-tree canvas { visibility:hidden; }
 .grove-tree.live img { visibility:hidden; }
 .grove-tree.live canvas { visibility:visible; }
+.grove-tree .grove-shadow {
+  z-index:-1; transform-origin:48.7% 99.4%; transform:matrix(.83,-.018,.53,-.115,0,0);
+  opacity:.55; filter:brightness(0) blur(2px); pointer-events:none;
+}
+.grove-tree:not(.live)::after {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background:url('assets/nursery-pine.webp') center / 100% 100%;
+  transform-origin:48.7% 99.4%; transform:matrix(.83,-.018,.53,-.115,0,0);
+  opacity:.55; filter:brightness(0) blur(2px);
+}
 .grove-notes { position:absolute; inset:0; pointer-events:none; }
 .grove-note { position:absolute; z-index:3; max-width:28%; padding:8px 12px; border-radius:2px; background:linear-gradient(90deg,#0d231dea,#152e23c9); pointer-events:auto; color:#f8f8ec; }
 .grove-note strong { display:block; font:400 clamp(18px,1.8vw,30px)/1.08 Georgia,serif; letter-spacing:-.035em; }
@@ -121,7 +152,8 @@ pine-grove { display:block; position:relative; height:290vh; height:290svh; marg
 .grove-foot i { display:block; font:italic 20px Georgia,serif; color:#fff; }
 @media(max-width:720px) {
   pine-grove { height:245svh; }
-  .grove-tree { height:min(70%,138vw); left:51%; bottom:12%; }
+  .grove-stage { --plant-x:51%; --ground:16%; }
+  .grove-tree { height:min(64%,135vw); }
   .grove-head { left:5%; top:5%; }
   .grove-note { max-width:37%; padding:6px 8px; }
   .grove-note strong { font-size:clamp(16px,3.9vw,22px); }
@@ -136,3 +168,7 @@ pine-grove { display:block; position:relative; height:290vh; height:290svh; marg
 pine-grove.static-grove { height:auto; }
 .static-grove .grove-stage { position:relative; }
 .static-grove .grove-hint { display:none; }
+
+@media(orientation:portrait) {
+  .grove-stage { --grove-photo:url('assets/grove-soil-portrait.webp'); }
+}
