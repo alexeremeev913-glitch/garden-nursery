@@ -412,6 +412,7 @@
       atlas.addEventListener('load',()=>{init();queue();},opts);
       window.addEventListener('scroll',queue,opts);
       this.resize=new ResizeObserver(queue);this.resize.observe(this.stage);
+      for(const note of this.notes)this.resize.observe(note);
       this.motion.addEventListener('change',()=>{init();queue();},opts);
       this.paint();
     }
