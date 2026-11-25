@@ -30,7 +30,7 @@ function pineScene(){
  ];
  return `<pine-grove id="about-grove" role="region" aria-labelledby="grove-title"><div class="grove-stage">
   <header class="grove-head"><div class="eyebrow">О питомнике</div><h2 id="grove-title">От саженца<br><em>до вашего сада.</em></h2></header>
-  <div class="grove-tree" aria-hidden="true"><img src="assets/nursery-pine.webp" loading="lazy" alt=""><canvas class="grove-specimen"></canvas><canvas class="grove-shadow"></canvas></div>
+  <canvas class="grove-ground-shadow" aria-hidden="true"></canvas><div class="grove-tree" aria-hidden="true"><img src="assets/pine-afternoon.webp" loading="lazy" alt=""><canvas class="grove-specimen"></canvas></div>
   <div class="grove-notes">${notes.map(([label,description,page,query])=>`<a class="grove-note" href="${url(page,query)}"><strong>${label}</strong><small>${description} →</small></a>`).join('')}</div>
   <div class="grove-foot"><span><i>Pinus sylvestris</i>Сосна обыкновенная</span><span class="grove-hint">Листайте, чтобы увидеть рост ↓</span></div>
  </div></pine-grove>`

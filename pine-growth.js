@@ -65,8 +65,7 @@
 
   // Atlas rectangles follow bone order: source x, y, width, height and rest-position x, y.
   const patches=[[0, 0, 29, 166, 240, 745], [31, 0, 57, 85, 228, 668], [90, 0, 96, 135, 216, 540], [188, 0, 71, 80, 217, 467], [261, 0, 79, 106, 224, 368], [342, 0, 76, 79, 220, 296], [420, 0, 77, 93, 213, 211], [499, 0, 70, 92, 222, 127], [571, 0, 47, 131, 247, 3], [620, 0, 57, 47, 203, 706], [679, 0, 79, 51, 138, 690], [760, 0, 87, 67, 64, 677], [849, 0, 58, 62, 21, 669], [909, 0, 45, 50, 253, 702], [0, 168, 70, 43, 284, 693], [72, 168, 105, 98, 337, 638], [179, 168, 128, 106, 392, 614], [309, 168, 50, 37, 253, 724], [361, 168, 123, 37, 293, 724], [486, 168, 63, 39, 197, 724], [551, 168, 83, 22, 125, 724], [636, 168, 60, 58, 201, 656], [698, 168, 85, 75, 128, 637], [785, 168, 93, 78, 57, 619], [880, 168, 95, 92, 4, 582], [0, 276, 65, 71, 254, 618], [67, 276, 72, 82, 296, 622], [141, 276, 95, 121, 341, 640], [238, 276, 47, 67, 215, 609], [287, 276, 90, 77, 153, 576], [379, 276, 98, 68, 77, 575], [479, 276, 54, 56, 211, 492], [535, 276, 95, 79, 132, 467], [632, 276, 101, 102, 59, 451], [735, 276, 115, 140, 6, 383], [852, 276, 60, 41, 257, 515], [914, 276, 84, 74, 305, 517], [0, 418, 89, 99, 373, 515], [91, 418, 88, 75, 427, 492], [181, 418, 50, 46, 214, 530], [233, 418, 68, 55, 160, 530], [303, 418, 112, 50, 66, 535], [417, 418, 74, 63, 257, 540], [493, 418, 119, 93, 295, 554], [614, 418, 65, 76, 198, 421], [681, 418, 94, 83, 141, 406], [777, 418, 94, 113, 81, 356], [873, 418, 91, 78, 48, 331], [966, 418, 53, 61, 255, 417], [0, 533, 86, 87, 288, 392], [88, 533, 99, 93, 345, 389], [189, 533, 84, 76, 404, 358], [275, 533, 50, 53, 256, 467], [327, 533, 79, 59, 288, 469], [408, 533, 87, 77, 332, 470], [497, 533, 47, 51, 216, 325], [546, 533, 105, 70, 131, 305], [653, 533, 84, 92, 116, 270], [739, 533, 65, 76, 255, 322], [806, 533, 85, 106, 282, 292], [893, 533, 93, 72, 328, 278], [0, 641, 81, 70, 359, 252], [83, 641, 55, 48, 208, 360], [140, 641, 83, 58, 146, 360], [225, 641, 50, 70, 211, 252], [277, 641, 71, 98, 167, 220], [350, 641, 90, 79, 106, 215], [442, 641, 82, 82, 79, 185], [526, 641, 62, 65, 254, 256], [590, 641, 75, 72, 275, 238], [667, 641, 57, 60, 301, 222], [726, 641, 60, 68, 204, 170], [788, 641, 68, 96, 178, 137], [858, 641, 69, 57, 149, 121], [929, 641, 59, 55, 143, 98], [0, 741, 45, 52, 257, 199], [47, 741, 77, 61, 291, 188], [126, 741, 75, 73, 326, 169], [203, 741, 37, 37, 257, 182], [242, 741, 71, 63, 268, 146], [315, 741, 54, 44, 288, 129], [371, 741, 51, 45, 213, 107], [424, 741, 60, 62, 192, 84], [486, 741, 39, 44, 201, 62], [527, 741, 47, 46, 257, 106], [576, 741, 51, 61, 271, 75], [629, 741, 42, 44, 282, 54], [673, 741, 30, 53, 235, 82], [705, 741, 33, 42, 228, 53], [740, 741, 30, 38, 226, 34]];
-  function createSurface(canvas,shadow,atlas){
-    const shadowCtx=shadow.getContext('2d');
+  function createSurface(canvas,atlas){
     const ctx=canvas.getContext('2d');
     if(!ctx)return null;
     return {
@@ -115,14 +114,105 @@
             ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+Math.cos(angle)*length*.5,y-1.8*strength,x+Math.cos(angle)*length,y+Math.sin(angle)*length);ctx.stroke();
           }
         }
-        if(shadowCtx){
-          const shadowWidth=Math.max(1,Math.round(w/3)),shadowHeight=Math.max(1,Math.round(h/3));
-          if(shadow.width!==shadowWidth || shadow.height!==shadowHeight){
-            shadow.width=shadowWidth;shadow.height=shadowHeight;
-          }
-          shadowCtx.clearRect(0,0,shadow.width,shadow.height);
-          shadowCtx.drawImage(canvas,0,0,shadow.width,shadow.height);
+
+      }
+    };
+  }
+
+  // Work in the ground plane. A wide, shallow buffer keeps the soil pass independent
+  // of display pixel ratio, including on high-density phones.
+  function groundLighting(stage,canvas,refresh){
+    const out=canvas.getContext('2d');
+    if(!out)return null;
+    const layer=()=>document.createElement('canvas');
+    const cast=layer(), penumbra=layer(), relief=layer();
+    const ink=cast.getContext('2d',{willReadFrequently:true});
+    const soft=penumbra.getContext('2d',{willReadFrequently:true});
+    const soil=relief.getContext('2d',{willReadFrequently:true});
+    const portrait=matchMedia('(orientation:portrait)');
+    let plate=null, plateKey='', key='', heights=null, result=null, disposed=false;
+    const invalidate=()=>{key='';if(!disposed)refresh();};
+
+    function prepare(w,h,bounds,top,scale){
+      const file=portrait.matches?'assets/grove-afternoon-portrait.webp':'assets/grove-afternoon.webp';
+      if(file!==plateKey){
+        plateKey=file;plate=new Image();plate.onload=invalidate;plate.src=file;
+      }
+      const layout=[file,bounds.width,bounds.height,top,w,h].join('/');
+      if(layout===key)return;
+      key=layout;
+      for(const surface of [canvas,cast,penumbra,relief]){
+        surface.width=w;surface.height=h;
+      }
+      result=out.createImageData(w,h);
+      heights=new Float32Array(w*h);
+      if(!plate.naturalWidth)return;
+      const cover=Math.max(bounds.width/plate.width,bounds.height/plate.height);
+      const pw=plate.width*cover, ph=plate.height*cover;
+      soil.drawImage(plate,(bounds.width-pw)*.5*scale,(bounds.height-ph-top)*scale,pw*scale,ph*scale);
+      try{
+        const data=soil.getImageData(0,0,w,h).data;
+        const luma=i=>.26*data[4*i]+.6*data[4*i+1]+.14*data[4*i+2];
+        for(let y=2;y<h-2;y++)for(let x=2;x<w-2;x++){
+          const i=y*w+x;
+          // Relief is registered to the plate's actual twigs, stones and clods.
+          const local=(luma(i-2)+luma(i+2)+luma(i-2*w)+luma(i+2*w))*.25;
+          heights[i]=Math.max(-1,Math.min(1,(luma(i)-local)/52));
         }
+      }catch{/* Local-file viewers may restrict pixel reads from the background. */}
+    }
+
+    return {
+      dispose(){disposed=true;if(plate)plate.onload=null;},
+      draw(specimen,tree,bounds,growth){
+        if(!specimen.width || (specimen.tagName==='IMG' && !specimen.naturalWidth))return;
+        const band=canvas.getBoundingClientRect(),top=band.top-bounds.top;
+        const scale=Math.min(1,800/bounds.width);
+        const w=Math.max(1,Math.round(bounds.width*scale)),h=Math.max(1,Math.round(band.height*scale));
+        prepare(w,h,bounds,top,scale);
+        const tw=tree.width*scale, th=tree.height*scale;
+        const rootX=(tree.left-bounds.left)*scale+tw*168/345;
+        const rootY=(tree.top-bounds.top-top)*scale+th*.994;
+        ink.setTransform(1,0,0,1,0,0);ink.clearRect(0,0,w,h);
+        ink.translate(rootX,rootY);
+        // Crown width has a depth component in this oblique view of the ground.
+        const reach=portrait.matches ? .56 : .74;
+        ink.transform(.72,.21,reach,-.19,0,0);
+        ink.drawImage(specimen,-tw*168/345,-th*.994,tw,th);
+        soft.clearRect(0,0,w,h);
+        soft.filter='blur('+Math.max(1.15,th*.012)+'px)';
+        soft.drawImage(cast,0,0);
+        let crisp,blurred;
+        try{
+          crisp=ink.getImageData(0,0,w,h).data;
+          blurred=soft.getImageData(0,0,w,h).data;
+        }catch{
+          // Still project a soft silhouette when file-origin canvas readback is blocked.
+          out.clearRect(0,0,w,h);out.globalAlpha=.54;out.filter='brightness(.2) blur(1px)';
+          out.drawImage(cast,0,0);out.globalAlpha=1;out.filter='none';return;
+        }
+        const pixels=result.data;
+        const radiusX=tw*(.013+.041*growth),radiusY=th*(.0018+.0068*growth);
+        for(let y=0;y<h;y++){
+          const dy=y-rootY;
+          const dist=clamp(dy/(th*.205));
+          const softness=.08+.89*dist;
+          for(let x=0;x<w;x++){
+            const i=y*w+x, j=i*4;
+            const bump=heights[i];
+            const sx=Math.min(w-1,Math.max(0,x+Math.round(bump*1.8*scale)));
+            const sy=Math.min(h-1,Math.max(0,y+Math.round(bump*2.7*scale)));
+            const k=(sy*w+sx)*4+3;
+            const shade=(crisp[k]*(1-softness)+blurred[k]*softness)/255;
+            const dx=(x-rootX)/radiusX,ey=(dy+th*.001)/radiusY;
+            const contact=dx*dx+ey*ey;
+            const occlusion=contact<9?Math.exp(-contact)*.78:0;
+            // Indirect skylight remains visible through the canopy's penumbra.
+            const alpha=1-(1-occlusion)*(1-shade*(.85-.22*dist));
+            pixels[j]=47;pixels[j+1]=62;pixels[j+2]=83;pixels[j+3]=255*alpha;
+          }
+        }
+        out.putImageData(result,0,0);
       }
     };
   }
@@ -136,13 +226,17 @@
       this.motion=matchMedia('(prefers-reduced-motion: reduce)');
       const opts={signal:this.life.signal,passive:true};
       const queue=()=>{if(this.visible && !this.frame)this.frame=requestAnimationFrame(()=>{this.frame=0;this.paint();});};
+      this.light=groundLighting(this.stage,this.querySelector('.grove-ground-shadow'),queue);
+      this.specimen=this.tree.querySelector('.grove-specimen');
+      this.photo=this.tree.querySelector('img');
+      this.photo.addEventListener('load',queue,opts);
       const atlas=new Image();
       const init=()=>{
         if(!this.visible || this.tried || this.motion.matches)return;
-        if(!atlas.src){atlas.src='assets/pine-branches.webp';return;}
+        if(!atlas.src){atlas.src='assets/branches-afternoon.webp';return;}
         if(!atlas.naturalWidth)return;
         this.tried=true;
-        this.surface=createSurface(this.tree.querySelector('.grove-specimen'),this.tree.querySelector('.grove-shadow'),atlas);
+        this.surface=createSurface(this.specimen,atlas);
         this.tree.classList.toggle('live',!!this.surface);
         this.classList.toggle('static-grove',!this.surface);
       };
@@ -160,7 +254,7 @@
     }
     disconnectedCallback(){
       this.observer.disconnect();this.resize.disconnect();this.life.abort();
-      cancelAnimationFrame(this.frame);this.surface=null;
+      cancelAnimationFrame(this.frame);this.frame=0;this.surface=null;this.light?.dispose();
     }
     paint(){
       const stage=this.stage, box=this.tree.getBoundingClientRect(), bounds=stage.getBoundingClientRect();
@@ -170,7 +264,7 @@
       const {bones,anchors}=this.rig;
       pose(bones,time);
       this.surface?.draw(bones);
-      this.tree.style.setProperty('--root-shadow',String(.12+.88*p));
+      if(this.visible)this.light?.draw(this.surface ? this.specimen : this.photo,box,bounds,p);
       const margin=stage.clientWidth<721?10:32;
       this.notes.forEach((note,i)=>{
         const anchor=bones[anchors[i]], isLeft=i!==1;
