@@ -55,7 +55,12 @@ function home(){return `<section class="hero">
  <div class="hero-buttons">${link('catalog','Выбрать растения <span aria-hidden="true">→</span>','btn light')}${link('about','О питомнике','hero-about')}</div></div></div>
  <div class="cover-index wrap"><span>Коллекции</span>${cats.map(([,key],i)=>link('catalog',shortCategoryNames[i],'','cat='+key)).join('')}</div>
  </section><div class="wrap"><section class="section collections"><div class="section-head"><h2>Коллекции сада</h2>${link('catalog','Весь каталог →','link')}</div>
- <div class="category-layout">${cats.map(([name,key])=>`<a class="category" href="${url('catalog','cat='+key)}">${image(catImages[key],'')}<strong>${name}</strong><span aria-hidden="true">→</span></a>`).join('')}</div></section><section class="section"><div class="section-head"><h2>Из прайса питомника</h2>${link('catalog','Смотреть все →','link')}</div><div class="popular-layout">${cards([data[0],data[240],data[307],data[487]])}<aside class="promo"><div class="eyebrow">Открытый грунт</div><h2>Прайс-лист 2025</h2><p>Все высоты, контейнеры и цены в одном файле.</p><a class="btn light" href="assets/price-2025.xlsx" download>Скачать Excel ↓</a></aside></div></section></div>${pineScene()}<div class="wrap gallery-band home-gallery"><div><h2>Фото питомника</h2>${link('about','Смотреть галерею →','link','view=gallery')}</div>${[47,34,68].map(n=>link('about',`<img loading="lazy" src="${photoURL(n)}" alt="Растения питомника">`,'','view=gallery')).join('')}</div>`}
+ <div class="category-layout">${cats.map(([name,key])=>`<a class="category" href="${url('catalog','cat='+key)}">${image(catImages[key],'')}<strong>${name}</strong><span aria-hidden="true">→</span></a>`).join('')}</div></section><section class="section"><div class="section-head"><h2>Из прайса питомника</h2>${link('catalog','Смотреть все →','link')}</div><div class="popular-layout">${cards([data[0],data[240],data[307],data[487]])}<aside class="promo"><div class="eyebrow">Открытый грунт</div><h2>Прайс-лист 2025</h2><p>Все высоты, контейнеры и цены в одном файле.</p><a class="btn light" href="assets/price-2025.xlsx" download>Скачать Excel ↓</a></aside></div></section></div>${pineScene()}<section class="wrap nursery-visit" aria-labelledby="visit-title">
+ <figure class="visit-photos"><img loading="lazy" src="${photoURL(32)}" alt="Дорожка между посадками в демонстрационном саду"><img loading="lazy" src="${photoURL(34)}" alt="Белые цветы в саду питомника"></figure>
+ <div class="visit-copy"><div class="eyebrow">Мытищи · Садовый центр</div><h2 id="visit-title">В гостях у питомника</h2>
+ <p>Пройдите по демонстрационному саду, рассмотрите хвою и форму крон вблизи. С выбором растений для вашего участка поможет специалист питомника.</p>
+ <dl class="visit-details"><div><dt>Время работы</dt><dd>09:00–18:00</dd></div><div><dt>На месте</dt><dd>Парковка и самовывоз</dd></div></dl>
+ <div class="visit-actions">${link('contacts','Как добраться →','btn')}${link('about','Фотографии сада →','link','view=gallery')}</div></div></section>`}
 const catName=key=>cats.find(c=>c[1]===key)?.[0]||'';
 const spec=p=>[p.height && 'Высота '+p.height,p.container].filter(Boolean).map(esc).join(' · ');
 const heartButton=p=>`<button type="button" class="heart" aria-label="Избранное" aria-pressed="${fav.includes(p.id)}" data-fav="${p.id}" onclick="toggleFav(${p.id})">${fav.includes(p.id)?'♥':'♡'}</button>`;
@@ -72,13 +77,38 @@ function catalog(params){
  <p id="results" role="status"></p><div id="cataloglist"></div></div></div></section>`;
 }
 const searchKey=s=>s.toLocaleLowerCase('ru').replaceAll('ё','е').trim();
+function collectionCards(){
+ return '<div class="collection-shelf">'+cats.map(([label,key])=>{
+  const count=data.filter(p=>p.cat===key).length;
+  return link('catalog',`<img loading="lazy" src="${photoURL(catImages[key])}" alt=""><div><small>Позиций в прайсе · ${count}</small><h2>${esc(label)}</h2></div><span aria-hidden="true">↗</span>`,'collection-cover','cat='+key);
+ }).join('')+'</div>';
+}
+function assortment(rows){
+ const groups=new Map();
+ for(const p of rows){
+  const key=p.cat+'|'+p.name;
+  if(!groups.has(key))groups.set(key,[]);
+  groups.get(key).push(p);
+ }
+ return '<div class="variety-list">'+Array.from(groups.values(),items=>{
+  const first=items[0], prices=items.map(p=>p.price).filter(n=>n!==null);
+  const from=prices.length?((Math.min(...prices)!==Math.max(...prices)?'от ':'')+money(Math.min(...prices))):'Уточнить цену';
+  return `<details class="variety"><summary><strong>${esc(first.name)}</strong><small>Вариантов · ${items.length}</small><b>${from}</b></summary>
+  <div class="variety-options">${items.map(p=>`<div class="variety-option">${link('product',esc(spec(p)||'Карточка растения')+' ↗','','id='+p.id)}<b>${priceText(p)}</b>${p.price===null?link('contacts','Спросить','link'):`<button class="table-add" aria-label="Добавить в корзину: ${esc(p.name)}, ${esc(spec(p))}" onclick="add(${p.id},0,1)">+</button>`}</div>`).join('')}</div></details>`;
+ }).join('')+'</div>';
+}
 function renderCatalog(){
  const cat=route().params.get('cat'),q=searchKey(document.querySelector('#query').value),raw=document.querySelector('#maxprice').value,sort=document.querySelector('#sort').value;
  const rows=data.filter(p=>(!cat||cat===p.cat)&&(!q||searchKey([p.name,p.height,p.container].join(' ')).includes(q))&&(raw===''||(p.price!==null&&p.price<=Number(raw))));
  if(sort==='name') rows.sort((a,b)=>a.name.localeCompare(b.name,'ru'));
  if(sort==='low'||sort==='high') rows.sort((a,b)=>a.price===null?1:b.price===null?-1:(a.price-b.price)*(sort==='low'?1:-1));
  document.querySelector('#results').textContent='Позиций в прайсе: '+rows.length;
- document.querySelector('#cataloglist').innerHTML=rows.length?priceTable(rows):'<div class="empty"><h2>Растения не найдены</h2><p>Попробуйте другое название или снимите ограничение цены.</p></div>';
+ const list=document.querySelector('#cataloglist');
+ if(!cat && !q && raw==='' && sort==='source'){list.innerHTML=collectionCards();return;}
+ const title=cat?catName(cat):'Результаты подбора';
+ const banner=catName(cat)?`<header class="collection-banner"><img src="${photoURL(catImages[cat])}" alt=""><h2>${esc(title)}</h2></header>`:`<h2 class="match-heading">${title}</h2>`;
+ const compare=sort==='low'||sort==='high';
+ list.innerHTML=rows.length?banner+(compare?priceTable(rows):assortment(rows)):'<div class="empty"><h2>Растения не найдены</h2><p>Попробуйте другое название или снимите ограничение цены.</p></div>';
 }
 function priceTable(items,detail=false){
  return `<div class="stock-scroll"><table class="stock-table"><thead><tr><th>Название</th><th>Высота</th><th>Контейнер</th><th>Цена</th><th><span class="sr-only">Заказ</span></th></tr></thead><tbody>${items.map(p=>`<tr>
