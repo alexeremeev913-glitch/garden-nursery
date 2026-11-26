@@ -36,16 +36,18 @@
       [7,[[159,77],[146,63],[140,50]]],[7,[[186,79],[201,59],[207,42]]],
       [7,[[166,57],[159,40],[155,32]]]
     ];
-    const tips=[];
+    const tips=[],boughs=[];
     for(const [joint,points] of whorls){
+      const first=bones.length;
       let p=joints[joint];
       points.forEach(([x,y],i)=>{
         const start=.024+joint*.076+i*.034;
         p=bone(p,x,y,start,Math.min(1,start+.43+i*.018));
       });
       tips.push(p);
+      boughs.push({first,last:p,joint});
     }
-    return {bones,anchors:[tips[0],tips[8],tips[11]]};
+    return {bones,boughs,anchors:[tips[0],tips[8],tips[11]]};
   }
 
   function pose(bones,time){
@@ -140,35 +142,76 @@
     return stem.canvas;
   }
 
+  // Additional whorls occupy the rear and near sides of the crown.
+  // Source bough, fraction to the next whorl, projected width, vertical shear.
+  const rearBoughs=[
+    [0,.38,.84,.13],[1,.55,.88,-.14],[4,.56,.79,.07],[5,.49,1.08,-.13],
+    [7,.43,.83,.10],[8,.58,.88,-.15],[11,.38,.78,.12],[12,.51,.88,-.10],
+    [14,.55,.91,.11],[15,.47,.77,-.08],[17,.42,.81,.11],[18,.56,.93,-.13],
+    [19,.32,.72,.10],[20,.46,.74,-.08],[22,.27,.68,.10],[23,.41,.76,-.11]
+  ];
+  const nearBoughs=[
+    [1,.15,.46,.35],[4,.21,.56,-.30],[8,.19,.57,.30],
+    [11,.13,.51,-.27],[15,.21,.51,.24],[17,.18,.55,-.25],[20,.15,.46,.21]
+  ];
+
   function createSurface(canvas,atlas){
     const ctx=canvas.getContext('2d');
     if(!ctx)return null;
     const stem=makeTrunkSurface(atlas);
+    function tint(filter){
+      const layer=document.createElement('canvas');
+      layer.width=atlas.width;layer.height=atlas.height;
+      const ink=layer.getContext('2d');
+      ink.filter=filter;ink.drawImage(atlas,0,0);
+      return layer;
+    }
+    const shade=tint('brightness(.84) saturate(1.13)');
+    const needles=tint('saturate(1.13) contrast(1.035)');
+    function drawBough(bones,first,last,texture){
+      for(let i=first;i<=last;i++){
+        const bone=bones[i];
+        if(bone.width<.006)continue;
+        const [sx,sy,sw,sh,x,y]=patches[i];
+        // Extend along the shoot first, and expand wood and needles normal to it.
+        const ux=bone.dx/bone.len, uy=bone.dy/bone.len;
+        const vx=bone.vx/bone.len, vy=bone.vy/bone.len;
+        const nx=-(bone.sin*ux+bone.cos*uy)*bone.width;
+        const ny=(bone.cos*ux-bone.sin*uy)*bone.width;
+        const a=vx*ux-nx*uy, c=vx*uy+nx*ux, b=vy*ux-ny*uy, d=vy*uy+ny*ux;
+        ctx.save();
+        ctx.transform(a,b,c,d,bone.ox-a*bone.ax-c*bone.ay,bone.oy-b*bone.ax-d*bone.ay);
+        ctx.drawImage(texture,sx,sy,sw,sh,x*W/525,y*H/913,sw*W/525,sh*H/913);
+        ctx.restore();
+      }
+    }
+    function drawDepthLayer(bones,boughs,placements,texture){
+      for(const [index,offset,width,shear] of placements){
+        const {first,last,joint}=boughs[index];
+        const pivot=bones[joint],above=bones[joint+1];
+        const y=pivot.tipY+(above.tipY-pivot.tipY)*offset;
+        ctx.save();
+        ctx.translate(rootX,y);
+        ctx.transform(width,shear,0,1.08,0,0);
+        ctx.translate(-rootX,-pivot.tipY);
+        drawBough(bones,first,last,texture);
+        ctx.restore();
+      }
+    }
     return {
-      draw(bones,{lengthScale,widthScale}){
+      draw({bones,boughs},{lengthScale,widthScale}){
         const dpr=Math.min(devicePixelRatio||1,1.75);
         const w=Math.max(1,Math.round(canvas.clientWidth*dpr)),h=Math.max(1,Math.round(canvas.clientHeight*dpr));
         if(canvas.width!==w || canvas.height!==h){canvas.width=w;canvas.height=h;}
         ctx.setTransform(1,0,0,1,0,0);
         ctx.clearRect(0,0,w,h);
-        for(let i=trunk.length;i<bones.length;i++){
-          const bone=bones[i];
-          if(bone.width<.006)continue;
-          const [sx,sy,sw,sh,x,y]=patches[i];
-          // Extend along the shoot first, and expand wood and needles normal to it.
-          const ux=bone.dx/bone.len, uy=bone.dy/bone.len;
-          const vx=bone.vx/bone.len, vy=bone.vy/bone.len;
-          const nx=-(bone.sin*ux+bone.cos*uy)*bone.width;
-          const ny=(bone.cos*ux-bone.sin*uy)*bone.width;
-          const a=vx*ux-nx*uy, c=vx*uy+nx*ux, b=vy*ux-ny*uy, d=vy*uy+ny*ux;
-          ctx.setTransform(w/W*a,h/H*b,w/W*c,h/H*d,
-            w/W*(bone.ox-a*bone.ax-c*bone.ay),h/H*(bone.oy-b*bone.ax-d*bone.ay));
-          ctx.drawImage(atlas,sx,sy,sw,sh,x*W/525,y*H/913,sw*W/525,sh*H/913);
-        }
         ctx.setTransform(w/W,0,0,h/H,0,0);
+        drawDepthLayer(bones,boughs,rearBoughs,shade);
+        drawBough(bones,trunk.length,bones.length-1,needles);
         const stemWidth=stem.width*W/525*widthScale;
         const stemHeight=stem.height*H/913*lengthScale;
         ctx.drawImage(stem,rootX-stemWidth/2,rootY-stemHeight,stemWidth,stemHeight);
+        drawDepthLayer(bones,boughs,nearBoughs,needles);
         // Early shoots carry fine needle pairs while the photographed tufts unfurl.
         ctx.lineCap='round';
         for(let i=trunk.length;i<bones.length;i++){
@@ -485,7 +528,7 @@
       const time=.06+.94*p;
       const {bones,anchors}=this.rig;
       const stemScale=pose(bones,time);
-      this.surface?.draw(bones,stemScale);
+      this.surface?.draw(this.rig,stemScale);
       if(this.visible && !this.tree.classList.contains('loading'))this.light?.draw(this.surface ? this.specimen : this.photo,box,bounds,p);
       const margin=stage.clientWidth<721?10:32;
       this.notes.forEach((note,i)=>{
