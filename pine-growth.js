@@ -1,18 +1,20 @@
 // Coordinates follow the photographed specimen, from root to terminal shoots.
 (() => {
-  const W=345, H=600;
+  const W=345, H=600, rootX=168, rootY=598;
+  // Rest coordinates locate the whorls in the photograph. All living joints
+  // are attached to the same vertical axis in the scene.
+  const trunk=[[168,492],[169,441],[171,357],[170,309],[170,244],[169,197],[171,141],[171,86],[173,4]];
   const clamp=n=>Math.min(1,Math.max(0,n));
   function makeRig(){
     const bones=[];
     function bone(parent,x,y,start,end){
       const base=bones[parent];
-      const ax=base ? base.x : 168, ay=base ? base.y : 598;
+      const ax=base ? base.x : rootX, ay=base ? base.y : rootY;
       const dx=x-ax, dy=y-ay;
       bones.push({parent,x,y,ax,ay,dx,dy,len:Math.hypot(dx,dy),start,end});
       return bones.length-1;
     }
     let previous=-1;
-    const trunk=[[168,492],[169,441],[171,357],[170,309],[170,244],[169,197],[171,141],[171,86],[173,4]];
     const joints=trunk.map(([x,y],i)=>{
       previous=bone(previous,x,y,i*.065,.34+i*.082);
       return previous;
@@ -47,7 +49,22 @@
   }
 
   function pose(bones,time){
-    for(const b of bones){
+    // Retain the growth timing of successive shoots. Apply their total length
+    // to a single leader so changes in joint width never pull it sideways.
+    let height=0;
+    for(let i=0;i<trunk.length;i++){
+      const b=bones[i];
+      const age=clamp((time-b.start)/(b.end-b.start));
+      height-=b.dy*age*(2-age);
+    }
+    const lengthScale=height/(rootY-bones[trunk.length-1].y);
+    for(let i=0;i<trunk.length;i++){
+      const b=bones[i];
+      b.tipX=rootX;
+      b.tipY=rootY+(b.y-rootY)*lengthScale;
+    }
+    for(let i=trunk.length;i<bones.length;i++){
+      const b=bones[i];
       const age=clamp((time-b.start)/(b.end-b.start));
       const growth=age*(2-age);
       const parent=bones[b.parent];
@@ -61,63 +78,100 @@
       b.width=growth*(.25+.75*age);
       b.age=age;
     }
+    return {lengthScale,widthScale:lengthScale*(.46+.54*smoothStep(0,.85,time))};
   }
 
   // Atlas rectangles follow bone order: source x, y, width, height and rest-position x, y.
   const patches=[[0, 0, 29, 166, 240, 745], [31, 0, 57, 85, 228, 668], [90, 0, 96, 135, 216, 540], [188, 0, 71, 80, 217, 467], [261, 0, 79, 106, 224, 368], [342, 0, 76, 79, 220, 296], [420, 0, 77, 93, 213, 211], [499, 0, 70, 92, 222, 127], [571, 0, 47, 131, 247, 3], [620, 0, 57, 47, 203, 706], [679, 0, 79, 51, 138, 690], [760, 0, 87, 67, 64, 677], [849, 0, 58, 62, 21, 669], [909, 0, 45, 50, 253, 702], [0, 168, 70, 43, 284, 693], [72, 168, 105, 98, 337, 638], [179, 168, 128, 106, 392, 614], [309, 168, 50, 37, 253, 724], [361, 168, 123, 37, 293, 724], [486, 168, 63, 39, 197, 724], [551, 168, 83, 22, 125, 724], [636, 168, 60, 58, 201, 656], [698, 168, 85, 75, 128, 637], [785, 168, 93, 78, 57, 619], [880, 168, 95, 92, 4, 582], [0, 276, 65, 71, 254, 618], [67, 276, 72, 82, 296, 622], [141, 276, 95, 121, 341, 640], [238, 276, 47, 67, 215, 609], [287, 276, 90, 77, 153, 576], [379, 276, 98, 68, 77, 575], [479, 276, 54, 56, 211, 492], [535, 276, 95, 79, 132, 467], [632, 276, 101, 102, 59, 451], [735, 276, 115, 140, 6, 383], [852, 276, 60, 41, 257, 515], [914, 276, 84, 74, 305, 517], [0, 418, 89, 99, 373, 515], [91, 418, 88, 75, 427, 492], [181, 418, 50, 46, 214, 530], [233, 418, 68, 55, 160, 530], [303, 418, 112, 50, 66, 535], [417, 418, 74, 63, 257, 540], [493, 418, 119, 93, 295, 554], [614, 418, 65, 76, 198, 421], [681, 418, 94, 83, 141, 406], [777, 418, 94, 113, 81, 356], [873, 418, 91, 78, 48, 331], [966, 418, 53, 61, 255, 417], [0, 533, 86, 87, 288, 392], [88, 533, 99, 93, 345, 389], [189, 533, 84, 76, 404, 358], [275, 533, 50, 53, 256, 467], [327, 533, 79, 59, 288, 469], [408, 533, 87, 77, 332, 470], [497, 533, 47, 51, 216, 325], [546, 533, 105, 70, 131, 305], [653, 533, 84, 92, 116, 270], [739, 533, 65, 76, 255, 322], [806, 533, 85, 106, 282, 292], [893, 533, 93, 72, 328, 278], [0, 641, 81, 70, 359, 252], [83, 641, 55, 48, 208, 360], [140, 641, 83, 58, 146, 360], [225, 641, 50, 70, 211, 252], [277, 641, 71, 98, 167, 220], [350, 641, 90, 79, 106, 215], [442, 641, 82, 82, 79, 185], [526, 641, 62, 65, 254, 256], [590, 641, 75, 72, 275, 238], [667, 641, 57, 60, 301, 222], [726, 641, 60, 68, 204, 170], [788, 641, 68, 96, 178, 137], [858, 641, 69, 57, 149, 121], [929, 641, 59, 55, 143, 98], [0, 741, 45, 52, 257, 199], [47, 741, 77, 61, 291, 188], [126, 741, 75, 73, 326, 169], [203, 741, 37, 37, 257, 182], [242, 741, 71, 63, 268, 146], [315, 741, 54, 44, 288, 129], [371, 741, 51, 45, 213, 107], [424, 741, 60, 62, 192, 84], [486, 741, 39, 44, 201, 62], [527, 741, 47, 46, 257, 106], [576, 741, 51, 61, 271, 75], [629, 741, 42, 44, 282, 54], [673, 741, 30, 53, 235, 82], [705, 741, 33, 42, 228, 53], [740, 741, 30, 38, 226, 34]];
+  function makeTrunkSurface(atlas){
+    const width=144, height=911, origin=190;
+    function strip(){
+      const canvas=document.createElement('canvas');
+      canvas.width=width;canvas.height=height;
+      return canvas.getContext('2d');
+    }
+    const shoots=strip(), stem=strip();
+    for(const [sx,sy,sw,sh,x,y] of patches.slice(0,trunk.length)){
+      shoots.drawImage(atlas,sx,sy,sw,sh,x-origin,y,sw,sh);
+    }
+    const photoCenter=y=>264.2-10.2*y/(height-1)+.7*(y/(height-1))**3-origin;
+    // Keep the photographed needles in front of the wood at their original
+    // size. The narrow stem within those needle clusters is replaced below.
+    try{
+      const image=shoots.getImageData(0,0,width,height);
+      for(let y=66;y<height;y++){
+        const depth=y/(height-1),center=photoCenter(y);
+        const inner=3+12.5*depth;
+        for(let x=Math.max(0,Math.floor(center-inner-4));x<=center+inner+4;x++){
+          const i=4*(y*width+x);
+          const green=smoothStep(-2,14,image.data[i+1]-image.data[i]*.99);
+          const edge=1-smoothStep(inner,inner+4,Math.abs(x-center));
+          image.data[i+3]*=1-smoothStep(66,135,y)*edge*(1-green);
+        }
+      }
+      shoots.putImageData(image,0,0);
+    }catch{/* File-origin viewers can still composite the original fine shoots. */}
+    const axis=width/2;
+    for(let y=0;y<height;y++){
+      const depth=y/(height-1);
+      if(y>66){
+        const radius=1.5+27.5*depth**1.2+2.2*depth**3+12*smoothStep(.947,1,depth)**2;
+        // Reflect a continuous sample of bare bark. Its lit side always faces
+        // the sun. Foliage and branch forks never get stretched across it.
+        const travel=(height-1-y)*.72%252;
+        const barkY=903-Math.min(travel,252-travel);
+        const [sx,sy,,,sourceX,sourceY]=patches[0];
+        stem.globalAlpha=smoothStep(66,135,y);
+        stem.drawImage(atlas,sx+244.9-sourceX,sy+barkY-sourceY,20.5,1,axis-radius,y,2*radius,1);
+      }
+      stem.globalAlpha=1;
+      stem.drawImage(shoots.canvas,0,y,width,1,axis-photoCenter(y),y,width,1);
+    }
+    // A few clods overlap the root flare at its fixed point of contact.
+    stem.globalCompositeOperation='destination-out';
+    for(let x=0;x<width;x++){
+      const side=Math.min(1,Math.abs(x-width/2)/43);
+      const soilLine=height-2-6*side**1.3+1.2*Math.sin(x*.71)+.6*Math.cos(x*2.1);
+      for(let y=height-15;y<height;y++){
+        stem.globalAlpha=smoothStep(soilLine-3,soilLine+1,y);
+        stem.fillRect(x,y,1,1);
+      }
+    }
+    return stem.canvas;
+  }
+
   function createSurface(canvas,atlas){
     const ctx=canvas.getContext('2d');
     if(!ctx)return null;
-    // Prepare the first trunk patch once. At the soil line, clods occlude the
-    // sides of the flare at different heights and the near lip stays visible.
-    const [sx,sy,sw,sh,x]=patches[0],collarPad=16;
-    const collar=document.createElement('canvas');
-    collar.width=sw+2*collarPad;collar.height=sh;
-    const wood=collar.getContext('2d');
-    const axis=collarPad+168*525/W-x;
-    for(let row=0;row<sh;row++){
-      const flare=1+.58*smoothStep(sh-33,sh,row)**2;
-      wood.drawImage(atlas,sx,sy+row,sw,1,axis+(collarPad-axis)*flare,row,sw*flare,1);
-    }
-    wood.globalCompositeOperation='destination-out';
-    for(let col=0;col<collar.width;col++){
-      const distance=Math.min(1,Math.abs(col-axis)/(sw*.63));
-      const soilLine=sh-2-6*distance**1.3+1.4*Math.sin(col*.71)+.8*Math.cos(col*2.1);
-      for(let row=sh-16;row<sh;row++){
-        wood.globalAlpha=smoothStep(soilLine-3,soilLine+1,row);
-        wood.fillRect(col,row,1,1);
-      }
-    }
+    const stem=makeTrunkSurface(atlas);
     return {
-      draw(bones){
+      draw(bones,{lengthScale,widthScale}){
         const dpr=Math.min(devicePixelRatio||1,1.75);
         const w=Math.max(1,Math.round(canvas.clientWidth*dpr)),h=Math.max(1,Math.round(canvas.clientHeight*dpr));
         if(canvas.width!==w || canvas.height!==h){canvas.width=w;canvas.height=h;}
         ctx.setTransform(1,0,0,1,0,0);
         ctx.clearRect(0,0,w,h);
-        bones.forEach((bone,i)=>{
-          if(bone.width<.006 || !patches[i])return;
+        for(let i=trunk.length;i<bones.length;i++){
+          const bone=bones[i];
+          if(bone.width<.006)continue;
           const [sx,sy,sw,sh,x,y]=patches[i];
           // Extend along the shoot first, and expand wood and needles normal to it.
           const ux=bone.dx/bone.len, uy=bone.dy/bone.len;
           const vx=bone.vx/bone.len, vy=bone.vy/bone.len;
-          // Secondary thickening follows the leader, tapering from the collar to its tip.
-          const girth=i<9 ? 1+1.28*bone.age*(1-i/9)**1.35 : 1;
-          const nx=-(bone.sin*ux+bone.cos*uy)*bone.width*girth;
-          const ny=(bone.cos*ux-bone.sin*uy)*bone.width*girth;
+          const nx=-(bone.sin*ux+bone.cos*uy)*bone.width;
+          const ny=(bone.cos*ux-bone.sin*uy)*bone.width;
           const a=vx*ux-nx*uy, c=vx*uy+nx*ux, b=vy*ux-ny*uy, d=vy*uy+ny*ux;
           ctx.setTransform(w/W*a,h/H*b,w/W*c,h/H*d,
             w/W*(bone.ox-a*bone.ax-c*bone.ay),h/H*(bone.oy-b*bone.ax-d*bone.ay));
-          if(i===0){
-            ctx.drawImage(collar,(x-collarPad)*W/525,y*H/913,collar.width*W/525,sh*H/913);
-          }else{
-            ctx.drawImage(atlas,sx,sy,sw,sh,x*W/525,y*H/913,sw*W/525,sh*H/913);
-          }
-        });
-        // Early shoots carry fine needle pairs while the photographed tufts unfurl.
+          ctx.drawImage(atlas,sx,sy,sw,sh,x*W/525,y*H/913,sw*W/525,sh*H/913);
+        }
         ctx.setTransform(w/W,0,0,h/H,0,0);
+        const stemWidth=stem.width*W/525*widthScale;
+        const stemHeight=stem.height*H/913*lengthScale;
+        ctx.drawImage(stem,rootX-stemWidth/2,rootY-stemHeight,stemWidth,stemHeight);
+        // Early shoots carry fine needle pairs while the photographed tufts unfurl.
         ctx.lineCap='round';
-        for(let i=0;i<bones.length;i++){
+        for(let i=trunk.length;i<bones.length;i++){
           const b=bones[i];
           if(b.age<=0 || b.age>=.95)continue;
           const strength=Math.sin(Math.PI*b.age/.95);
@@ -199,7 +253,7 @@
     const sampler=source.getContext('2d',{willReadFrequently:true});
     function prepare(w,h,tree,bounds,plate){
       const unit=tree.height/H;
-      const left=tree.left-bounds.left+tree.width*168/W+rootBed.left*unit;
+      const left=tree.left-bounds.left+tree.width*rootX/W+rootBed.left*unit;
       const top=tree.top-bounds.top+tree.height*.994+rootBed.top*unit;
       const width=rootBed.width*unit,height=rootBed.height*unit;
       const layout=[w,h,left.toFixed(2),top.toFixed(2),bounds.width,bounds.height,plate.src].join('/');
@@ -390,6 +444,7 @@
       const queue=()=>{if(this.visible && !this.frame)this.frame=requestAnimationFrame(()=>{this.frame=0;this.paint();});};
       this.specimen=this.tree.querySelector('.grove-specimen');
       this.photo=this.tree.querySelector('img');
+      this.tree.classList.add('loading');
       const drawRoots=rootGround(this.querySelector('.grove-root-bed'),this.photo);
       this.light=groundLighting(this.stage,this.querySelector('.grove-ground-shadow'),queue,drawRoots);
       this.photo.addEventListener('load',queue,opts);
@@ -400,10 +455,13 @@
         if(!atlas.naturalWidth)return;
         this.tried=true;
         this.surface=createSurface(this.specimen,atlas);
+        this.tree.classList.remove('loading');
         this.tree.classList.toggle('live',!!this.surface);
         this.classList.toggle('static-grove',!this.surface);
       };
-      atlas.addEventListener('error',()=>{this.classList.add('static-grove');queue();},opts);
+      atlas.addEventListener('error',()=>{
+        this.tree.classList.remove('loading');this.classList.add('static-grove');queue();
+      },opts);
       this.observer=new IntersectionObserver(entries=>{
         this.visible=entries[0].isIntersecting;
         if(this.visible){init();queue();}
@@ -422,13 +480,13 @@
     }
     paint(){
       const stage=this.stage, box=this.tree.getBoundingClientRect(), bounds=stage.getBoundingClientRect();
-      const staticView=this.motion.matches || !this.surface;
+      const staticView=this.motion.matches || this.classList.contains('static-grove');
       const p=staticView?1:clamp(-this.getBoundingClientRect().top/Math.max(1,this.offsetHeight-stage.offsetHeight));
       const time=.06+.94*p;
       const {bones,anchors}=this.rig;
-      pose(bones,time);
-      this.surface?.draw(bones);
-      if(this.visible)this.light?.draw(this.surface ? this.specimen : this.photo,box,bounds,p);
+      const stemScale=pose(bones,time);
+      this.surface?.draw(bones,stemScale);
+      if(this.visible && !this.tree.classList.contains('loading'))this.light?.draw(this.surface ? this.specimen : this.photo,box,bounds,p);
       const margin=stage.clientWidth<721?10:32;
       this.notes.forEach((note,i)=>{
         const anchor=bones[anchors[i]], isLeft=i!==1;
