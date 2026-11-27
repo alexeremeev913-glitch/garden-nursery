@@ -62,14 +62,39 @@ function home(){return `<section class="hero">
  <dl class="visit-details"><div><dt>Время работы</dt><dd>09:00–18:00</dd></div><div><dt>На месте</dt><dd>Парковка и самовывоз</dd></div></dl>
  <div class="visit-actions">${link('contacts','Как добраться →','btn')}${link('about','Фотографии сада →','link','view=gallery')}</div></div></section>`}
 const catName=key=>cats.find(c=>c[1]===key)?.[0]||'';
-const spec=p=>[p.height && 'Высота '+p.height,p.container].filter(Boolean).map(esc).join(' · ');
+function dimensions(p){
+ let size=p.height.trim(),pack=p.container.trim();
+ if(/^[cс]\s*\d/i.test(size)&&(/^[\d]/.test(pack)||/^[pр][aа]$/i.test(pack))){[size,pack]=[pack,size]}
+ const standard=size.match(/^(h|d|[pр][aа])?\s*(\d+)?(?:\s*-\s*(\d+))?(\+)?$/i);
+ if(!size)return {label:'Размер саженца',value:'По запросу',pack};
+ if(!standard||standard[3]&&Number(standard[2])>Number(standard[3]))return {label:'Размер по прайсу',value:size+' · уточнить',pack};
+ const [,prefix='',start,end,plus]=standard;
+ const label=/^[pр]/i.test(prefix)?'Высота штамба':/^d/i.test(prefix)?'Диаметр кроны':'Высота саженца';
+ return {label,value:start?start+(end?'–'+end:'')+(plus||'')+' см':'По запросу',pack};
+}
+const spec=p=>{const d=dimensions(p);return [d.label+' · '+d.value,d.pack].filter(Boolean).map(esc).join(' · ')};
 const heartButton=p=>`<button type="button" class="heart" aria-label="Избранное" aria-pressed="${fav.includes(p.id)}" data-fav="${p.id}" onclick="toggleFav(${p.id})">${fav.includes(p.id)?'♥':'♡'}</button>`;
 const priceText=p=>p.price===null?'Уточнить цену':money(p.price);
-function card(p){
- return `<article class="sku-card"><div class="sku-kind">${catName(p.cat)}</div>${heartButton(p)}
- <h3>${link('product',esc(p.name),'','id='+p.id)}</h3><p>${spec(p)}</p>
- <div class="sku-end"><strong>${priceText(p)}</strong>${link('product','Выбрать →','link','id='+p.id)}</div></article>`;
+function plantProfile(p){
+ const [key,custom]=plantIndex[p.name];
+ const photo=plantPhotos[key];
+ return {photo,description:custom||plantDescriptions[p.name.split(' ')[0].replace(',','')]};
 }
+function plantImage(photo,lazy=true){
+ return `<img class="botanical-photo" src="${esc(photo.file)}" alt="${esc(photo.label)}" width="600" height="420" ${lazy?'loading="lazy"':''} decoding="async">`;
+}
+function measureBlock(p){
+ const d=dimensions(p);
+ return `<dl class="plant-measures"><div class="measured"><dt>${esc(d.label)}</dt><dd>${esc(d.value)}</dd></div><div><dt>Упаковка</dt><dd>${esc(d.pack||'По запросу')}</dd></div></dl>`;
+}
+function plantTile(p,items){
+ const {photo,description}=plantProfile(p),multi=items.length>1;
+ const prices=items.map(x=>x.price).filter(n=>n!==null);
+ const price=multi&&prices.length?(Math.min(...prices)!==Math.max(...prices)?'от ':'')+money(Math.min(...prices)):priceText(p);
+ const options=multi?`<details class="plant-options"><summary>Размеры и цены <small>${items.length}</small></summary>${items.map(row=>`<a href="${url('product','id='+row.id)}"><span>${spec(row)}</span><b>${priceText(row)} →</b></a>`).join('')}</details>`:measureBlock(p);
+ return `<article class="plant-tile"><div class="plant-frame"><a href="${url('product','id='+p.id)}" aria-label="${esc(p.name)}">${plantImage(photo)}</a><span class="photo-tag">${esc(photo.type)}</span>${heartButton(p)}</div><div class="plant-copy"><h3>${link('product',esc(p.name),'','id='+p.id)}</h3><p>${esc(description)}</p>${options}<div class="plant-end"><strong>${price}</strong>${link('product','Подробнее →','link','id='+p.id)}</div></div></article>`;
+}
+function card(p){return plantTile(p,[p])}
 function catalog(params){
  return `<section class="wrap nursery-section">${crumb('Каталог')}<div class="catalog-intro"><div class="eyebrow">Открытый грунт · Прайс-лист 2025</div><h1>Каталог растений</h1><p>Выберите раздел или найдите растение по названию. Наличие и стоимость на дату заказа подтвердит питомник.</p>${downloadPrice}</div>
  <div class="price-layout"><aside class="price-aside"><h2>Разделы</h2><nav aria-label="Разделы прайса">${[['Все растения',''],...cats].map(([label,key])=>link('catalog',esc(label)+'<small>'+(key?data.filter(p=>p.cat===key).length:data.length)+'</small>',(params.get('cat')||'')===key?'active':'',key?'cat='+key:'')).join('')}</nav></aside>
@@ -90,12 +115,7 @@ function assortment(rows){
   if(!groups.has(key))groups.set(key,[]);
   groups.get(key).push(p);
  }
- return '<div class="variety-list">'+Array.from(groups.values(),items=>{
-  const first=items[0], prices=items.map(p=>p.price).filter(n=>n!==null);
-  const from=prices.length?((Math.min(...prices)!==Math.max(...prices)?'от ':'')+money(Math.min(...prices))):'Уточнить цену';
-  return `<details class="variety"><summary><strong>${esc(first.name)}</strong><small>Вариантов · ${items.length}</small><b>${from}</b></summary>
-  <div class="variety-options">${items.map(p=>`<div class="variety-option">${link('product',esc(spec(p)||'Карточка растения')+' ↗','','id='+p.id)}<b>${priceText(p)}</b>${p.price===null?link('contacts','Спросить','link'):`<button class="table-add" aria-label="Добавить в корзину: ${esc(p.name)}, ${esc(spec(p))}" onclick="add(${p.id},0,1)">+</button>`}</div>`).join('')}</div></details>`;
- }).join('')+'</div>';
+ return '<div class="plant-shelf">'+Array.from(groups.values(),items=>plantTile(items[0],items)).join('')+'</div>';
 }
 function renderCatalog(){
  const cat=route().params.get('cat'),q=searchKey(document.querySelector('#query').value),raw=document.querySelector('#maxprice').value,sort=document.querySelector('#sort').value;
@@ -108,21 +128,23 @@ function renderCatalog(){
  const title=cat?catName(cat):'Результаты подбора';
  const banner=catName(cat)?`<header class="collection-banner"><img src="${photoURL(catImages[cat])}" alt=""><h2>${esc(title)}</h2></header>`:`<h2 class="match-heading">${title}</h2>`;
  const compare=sort==='low'||sort==='high';
- list.innerHTML=rows.length?banner+(compare?priceTable(rows):assortment(rows)):'<div class="empty"><h2>Растения не найдены</h2><p>Попробуйте другое название или снимите ограничение цены.</p></div>';
+ list.innerHTML=rows.length?banner+(compare?'<div class="plant-shelf">'+rows.map(card).join('')+'</div>':assortment(rows)):'<div class="empty"><h2>Растения не найдены</h2><p>Попробуйте другое название или снимите ограничение цены.</p></div>';
 }
-function priceTable(items,detail=false){
- return `<div class="stock-scroll"><table class="stock-table"><thead><tr><th>Название</th><th>Высота</th><th>Контейнер</th><th>Цена</th><th><span class="sr-only">Заказ</span></th></tr></thead><tbody>${items.map(p=>`<tr>
- <th scope="row">${detail?esc(p.name):link('product',esc(p.name),'','id='+p.id)}</th><td>${esc(p.height)||'—'}</td><td>${esc(p.container)||'—'}</td><td class="stock-price">${priceText(p)}</td>
+function priceTable(items,selectedId){
+ return `<div class="stock-scroll"><table class="stock-table"><thead><tr><th>Название</th><th>Размер саженца</th><th>Контейнер</th><th>Цена</th><th><span class="sr-only">Заказ</span></th></tr></thead><tbody>${items.map(p=>`<tr>
+ <th scope="row">${link('product',esc(p.name),'','id='+p.id)}${p.id===selectedId?'<small class="selected-size">Выбран</small>':''}</th><td>${esc(dimensions(p).label)}<br>${esc(dimensions(p).value)}</td><td>${esc(dimensions(p).pack)||'—'}</td><td class="stock-price">${priceText(p)}</td>
  <td>${p.price===null?link('contacts','Спросить','table-ask'):`<button class="table-add" type="button" aria-label="В корзину: ${esc(p.name)}" onclick="add(${p.id},0,1)">+</button>`}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function product(p){
  if(!p)return `<section class="wrap section">${pageHead('Позиция не найдена')}${btn('catalog','К прайсу')}</section>`;
+ const {photo,description}=plantProfile(p);
  const siblings=data.filter(row=>row.cat===p.cat&&row.name===p.name);
  return `<section class="wrap nursery-section">${crumb(link('catalog','Каталог')+' / '+link('catalog',catName(p.cat),'','cat='+p.cat))}
- <div class="specimen-heading"><div class="eyebrow">Прайс 2025 · ${catName(p.cat)}</div><h1>${esc(p.name)}</h1><p>${spec(p)}</p>${heartButton(p)}</div>
+ <div class="plant-detail"><figure class="plant-portrait">${plantImage(photo,false)}<figcaption><span>${esc(photo.label)}</span><span>Фото · <a href="${esc(photo.page)}" target="_blank" rel="noopener">${esc(photo.author)}</a> · <a href="${esc(photo.license)}" target="_blank" rel="noopener">${esc(photo.terms)}</a> · кадрировано</span></figcaption></figure>
+ <div class="plant-detail-copy"><div class="specimen-heading"><div class="eyebrow">${catName(p.cat)}</div><h1>${esc(p.name)}</h1>${heartButton(p)}</div><p class="plant-lead">${esc(description)}</p>${measureBlock(p)}
  <div class="offer-panel"><div><span>Цена выбранного варианта</span><strong>${priceText(p)}</strong></div>
  ${p.price===null?btn('contacts','Уточнить цену','consult=1'):`<div class="buyline"><div class="stepper"><button aria-label="Уменьшить количество" onclick="changeCard(${p.id},-1,this)">−</button><span>${quantities[p.id]||1}</span><button aria-label="Увеличить количество" onclick="changeCard(${p.id},1,this)">+</button></div><button class="btn" onclick="add(${p.id},0,quantities[${p.id}]||1)">В корзину</button></div>`}</div>
- <h2 class="sub-title">Варианты в прайсе</h2>${priceTable(siblings,true)}
+ </div></div><h2 class="sub-title">Варианты в прайсе</h2>${priceTable(siblings,p.id)}
  <p class="note">Наличие и стоимость перед покупкой уточните у менеджера. <a href="tel:+79779235523">${business.phone}</a></p>
  <div class="hero-buttons">${link('catalog','Вернуться в раздел','btn outline','cat='+p.cat)}${btn('delivery','Доставка и самовывоз')}</div></section>`;
 }
@@ -130,7 +152,7 @@ function changeCard(id,n,el){quantities[id]=Math.max(1,Math.min(99,(quantities[i
 function toggleFav(id){fav=fav.includes(id)?fav.filter(x=>x!==id):[...fav,id];storage.set('fav',fav);document.querySelectorAll(`[data-fav="${id}"]`).forEach(x=>{x.textContent=fav.includes(id)?'♥':'♡';x.classList.toggle('on',fav.includes(id));x.setAttribute('aria-pressed',fav.includes(id))});counts();if(route().page==='favorites')render();else toast(fav.includes(id)?'Добавлено в избранное':'Удалено из избранного')}
 function add(id,v,qty){if(!find(id)||find(id).price===null)return;let x=cart.find(x=>x.id===id&&x.v===v);if(x)x.qty=Math.min(99,x.qty+qty);else cart.push({id,v,qty});saveCart();toast('Растение добавлено в корзину')}
 function counts(){document.querySelector('#cartcount').textContent=cart.reduce((s,x)=>s+x.qty,0);document.querySelector('#favcount').textContent=fav.length}function saveCart(){storage.set('cart',cart);counts()}function total(){return cart.reduce((s,x)=>s+cost(find(x.id),x.v)*x.qty,0)}
-function cartPage(){return `<div class="wrap section">${crumb('Корзина')}${pageHead('Корзина')}${cart.length?cart.map((x,i)=>{let p=find(x.id);return `<div class="cartrow">${image(p.img,p.name)}<div>${link('product',`<h3>${p.name}</h3>`,'','id='+p.id)}<p>${spec(p)} · ${money(cost(p,x.v))}/шт.</p></div><div class="stepper"><button onclick="cartChange(${i},-1)">−</button><span>${x.qty}</span><button onclick="cartChange(${i},1)">+</button></div><strong>${money(cost(p,x.v)*x.qty)}</strong><button class="icon" aria-label="Удалить" onclick="removeCart(${i})">×</button></div>`}).join('')+`<div class="summary"><h3>Итого: ${money(total())}</h3><p>Стоимость доставки не включена.</p>${btn('checkout','Оформить заказ')}</div>`:`<div class="empty"><h2>Корзина пока пуста</h2><p>Выберите растения, которые вам понравились.</p>${btn('catalog','Перейти в каталог')}</div>`}</div>`}
+function cartPage(){return `<div class="wrap section">${crumb('Корзина')}${pageHead('Корзина')}${cart.length?cart.map((x,i)=>{let p=find(x.id);return `<div class="cartrow">${plantImage(plantProfile(p).photo)}<div>${link('product',`<h3>${p.name}</h3>`,'','id='+p.id)}<p>${spec(p)} · ${money(cost(p,x.v))}/шт.</p></div><div class="stepper"><button onclick="cartChange(${i},-1)">−</button><span>${x.qty}</span><button onclick="cartChange(${i},1)">+</button></div><strong>${money(cost(p,x.v)*x.qty)}</strong><button class="icon" aria-label="Удалить" onclick="removeCart(${i})">×</button></div>`}).join('')+`<div class="summary"><h3>Итого: ${money(total())}</h3><p>Стоимость доставки не включена.</p>${btn('checkout','Оформить заказ')}</div>`:`<div class="empty"><h2>Корзина пока пуста</h2><p>Выберите растения, которые вам понравились.</p>${btn('catalog','Перейти в каталог')}</div>`}</div>`}
 function cartChange(i,n){cart[i].qty=Math.max(1,Math.min(99,cart[i].qty+n));saveCart();render()}function removeCart(i){cart.splice(i,1);saveCart();render()}
 function orderMessage(method){
  const lines=cart.map(x=>{const p=find(x.id);return [p.name,p.height,p.container,x.qty+' шт.',money(p.price*x.qty)].filter(Boolean).join(' · ');});

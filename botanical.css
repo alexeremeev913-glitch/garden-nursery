@@ -419,3 +419,34 @@ main[data-section] > .wrap::after { left:100.5%; top:var(--right-height); rotate
   main[data-section="home"] > .wrap::after { display:none; }
   .collections + .section::before { margin:-5px 25% 7px auto; }
 }
+
+/* Product photography and nursery sizes */
+.plant-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,244px),1fr));align-items:stretch;gap:clamp(16px,2vw,28px);margin-top:24px}
+.plant-tile{min-width:0;display:flex;flex-direction:column;border:1px solid #d5dacd;border-radius:8px;overflow:hidden;background:#fcfbf6;color:#19392d;text-align:left}
+.plant-frame{position:relative;overflow:hidden;background:#d9dfd0}
+.plant-frame a{display:block;overflow:hidden}
+.plant-frame .botanical-photo,.plant-portrait .botanical-photo{display:block;width:100%;height:auto;aspect-ratio:10/7;object-fit:cover}
+.plant-frame .botanical-photo{transition:transform .45s ease}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){.plant-frame a:hover .botanical-photo{transform:scale(1.035)}}
+.plant-frame .heart,.plant-detail-copy .heart{position:absolute;top:10px;right:10px;display:grid;place-items:center;width:39px;height:39px;border-radius:50%;border:1px solid #ddded0;background:#fcfbf3;color:#214a38;line-height:1}
+.photo-tag{position:absolute;bottom:9px;left:10px;padding:3px 8px;border-radius:2px;color:#fff;background:#14291cce;font:500 10px/1.5 var(--body-font,sans-serif);pointer-events:none}
+.plant-copy{display:flex;flex-direction:column;flex:1;gap:12px;padding:clamp(14px,1.4vw,23px)}
+.plant-copy h3{margin:0;color:#19392d;font:400 clamp(21px,1.7vw,29px)/1.13 var(--display-font,Georgia);letter-spacing:-.025em;overflow-wrap:anywhere}
+.plant-copy>p{margin:0 0 auto;color:#47594e;font-size:13px;line-height:1.55}
+.plant-measures{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:10px;margin:0;padding:12px 0;border-block:1px solid #d7ddce}
+.plant-measures>div{min-width:0}.plant-measures dt{font-size:11px;line-height:1.3;color:#536759}
+.plant-measures dd{margin:4px 0 0;font-weight:600;line-height:1.3;font-size:14px;overflow-wrap:anywhere}
+.measured{position:relative;padding-left:13px}
+.measured::before{content:"";position:absolute;left:0;top:1px;bottom:2px;width:5px;border-left:1px solid #71846e;background:repeating-linear-gradient(to bottom,#71846e 0 1px,transparent 1px 5px)}
+.plant-end,.plant-options a,.plant-options summary{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.plant-end{flex-wrap:wrap}.plant-end .link{font-size:12px}
+.plant-options{border-block:1px solid #d7ddce;font-size:13px}.plant-options summary{cursor:pointer;padding:13px 0;font-weight:600;list-style:none}
+.plant-options summary::-webkit-details-marker{display:none}.plant-options summary small{margin-left:auto}.plant-options summary::after{content:"+"}.plant-options[open] summary::after{content:"−"}
+.plant-options a{padding:10px 0;border-top:1px solid #dde1d6;font-size:12px}.plant-options a b{flex:none}
+.plant-detail{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:clamp(28px,5vw,86px);align-items:start;margin:28px 0 38px}
+.plant-portrait{margin:0;min-width:0}.plant-portrait img{border-radius:8px;background:#d9dfd0}.plant-portrait figcaption{display:grid;gap:3px;margin-top:8px;font-size:11px;line-height:1.5;color:#516257;overflow-wrap:anywhere}.plant-portrait figcaption a{text-decoration:underline}
+.plant-detail-copy{min-width:0}.plant-detail-copy .specimen-heading{position:relative;margin:0 0 14px;padding:0 48px 0 0}.plant-detail-copy .specimen-heading h1{font-size:clamp(30px,3.8vw,59px);overflow-wrap:anywhere;line-height:1.06}
+.plant-detail-copy .plant-lead{font-size:clamp(15px,1.3vw,19px);line-height:1.6;margin:0 0 24px;color:#405647}
+.plant-detail-copy .offer-panel{padding:16px 0;margin:6px 0;flex-wrap:wrap;gap:12px}.plant-detail-copy .heart{top:0;right:0}
+.selected-size{display:block;color:#546a5a;font-weight:400}.stock-table th a{text-decoration:underline;text-underline-offset:3px}
+@media(max-width:720px){.plant-detail{grid-template-columns:minmax(0,1fr);gap:20px}.plant-detail-copy .offer-panel .buyline{flex-wrap:wrap}.plant-shelf{grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr))}}
