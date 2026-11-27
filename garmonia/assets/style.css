@@ -3,11 +3,11 @@
 
 
 
-/* Unified transition: real cover element with a single solid fill. */
-html::after{content:none!important;display:none!important}
-.transition,.transition.enter,.transition.leave{display:none!important;animation:none!important}
-.transition::before,.transition::after{content:none!important;display:none!important}
-#plain-green-cover{position:fixed;inset:0;z-index:2147483647;display:none;place-items:center;box-sizing:border-box;padding:24px;background:#14291f!important;background-image:none!important;color:#fff!important;text-align:center;font:400 clamp(32px,5vw,70px)/1.15 'Spectral',Georgia,serif;overflow-wrap:anywhere;opacity:1;pointer-events:auto;transform:none!important;animation:none!important}
-html.garmonia-incoming #plain-green-cover,html.garmonia-cover #plain-green-cover{display:grid}
-html.garmonia-leaving #plain-green-cover{display:grid;opacity:0;transition:opacity .2s ease;pointer-events:none}
-@media(prefers-reduced-motion:reduce){html.garmonia-leaving #plain-green-cover{transition:none}}
+
+/* One fixed, opaque layer, shared by every HTML page. */
+html::after,.transition,.transition::before,.transition::after{display:none!important;content:none!important;animation:none!important}
+#garmonia-nav-cover{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;box-sizing:border-box;padding:28px;background:#14291f!important;background-image:none!important;color:#fff!important;text-align:center;font:400 clamp(30px,5vw,70px)/1.15 'Spectral',Georgia,serif;overflow-wrap:anywhere;opacity:0;visibility:hidden;pointer-events:none;transform:none!important;animation:none!important;transition:none}
+html[data-nav-phase="show"] #garmonia-nav-cover,html[data-nav-phase="incoming"] #garmonia-nav-cover{opacity:1;visibility:visible;pointer-events:auto}
+html[data-nav-phase="fade"] #garmonia-nav-cover{opacity:0;visibility:visible;pointer-events:none;transition:opacity .22s ease}
+
+#plain-green-cover{display:none!important}

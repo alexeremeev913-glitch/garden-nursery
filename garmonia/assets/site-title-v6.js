@@ -1,11 +1,37 @@
-/* One real full-screen cover; visible title, no decorative background. */
-(()=>{const root=document.documentElement,key='garmonia-title-v6';let cover=document.getElementById('plain-green-cover');if(!cover){cover=document.createElement('div');cover.id='plain-green-cover';cover.setAttribute('aria-hidden','true');document.body.prepend(cover)}const sectionNames={'index.html':'Главная','':'Главная','services.html':'Услуги','about.html':'О центре','reviews.html':'Отзывы','contacts.html':'Контакты','booking.html':'Запись'};let busy=false,timer=0,leaveTimer=0;let pending=null;try{pending=JSON.parse(sessionStorage.getItem(key)||'null');sessionStorage.removeItem(key)}catch(e){}const incoming=!!(pending&&pending.path===location.pathname+location.search&&Date.now()-pending.at<120000);
-function reset(){clearTimeout(timer);clearTimeout(leaveTimer);busy=false;root.classList.remove('garmonia-incoming','garmonia-cover','garmonia-leaving','cover-out');root.classList.add('garmonia-ready','cover-ready')}
-function show(title){cover.textContent=title;root.classList.remove('garmonia-leaving');root.classList.add('garmonia-cover')}
-function hide(){root.classList.remove('garmonia-incoming','garmonia-cover');root.classList.add('garmonia-leaving');leaveTimer=setTimeout(reset,230)}
-if(incoming){show(pending.title);requestAnimationFrame(()=>requestAnimationFrame(()=>{timer=setTimeout(hide,360)}))}else reset();
+/* Garmonia navigation v7 */
+(function(){
+'use strict';
+const root=document.documentElement,key='garmonia-nav-v7',dir=new URL('.',location.href).pathname;
+const labels={'index.html':'Главная','':'Главная','services.html':'Услуги','about.html':'О центре','reviews.html':'Отзывы','contacts.html':'Контакты','booking.html':'Запись'};
+const pageLabel=()=>labels[location.pathname.split('/').pop()]||document.title.split(' · ')[0]||'Услуги';
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let pending=null,busy=false,timer=0,fadeTimer=0;
+try{pending=JSON.parse(sessionStorage.getItem(key)||'null');sessionStorage.removeItem(key)}catch(e){}
+const incoming=pending&&pending.path===location.pathname+location.search&&Date.now()-pending.at<120000;
+if(incoming&&!reduced){root.dataset.navPhase='incoming';root.dataset.navTitle=pending.title}
+function cover(){let el=document.getElementById('garmonia-nav-cover');if(!el&&document.body){el=document.createElement('div');el.id='garmonia-nav-cover';el.setAttribute('aria-hidden','true');document.body.prepend(el)}return el}
+function setTitle(title){root.dataset.navTitle=title;const el=cover();if(el)el.textContent=title}
+function reset(){clearTimeout(timer);clearTimeout(fadeTimer);busy=false;delete root.dataset.navPhase}
+function fade(){root.dataset.navPhase='fade';fadeTimer=setTimeout(reset,240)}
+function init(){setTitle(incoming?pending.title:pageLabel());if(incoming&&!reduced){requestAnimationFrame(()=>requestAnimationFrame(()=>{timer=setTimeout(fade,320)}))}else reset()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 window.addEventListener('pageshow',e=>{if(e.persisted)reset()});
-document.addEventListener('click',e=>{if(e.defaultPrevented||e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;const a=e.target.closest?.('a[data-transition]');if(!a||a.target||a.hasAttribute('download'))return;const u=new URL(a.href,location.href);if(u.origin!==location.origin||!u.pathname.includes('/garmonia/'))return;if(u.pathname===location.pathname&&u.search===location.search)return;e.preventDefault();e.stopImmediatePropagation();if(busy)return;busy=true;clearTimeout(timer);clearTimeout(leaveTimer);const next=a.dataset.transition?.trim()||sectionNames[u.pathname.split('/').pop()]||a.textContent.trim()||'GARMONIA';show(next);try{sessionStorage.setItem(key,JSON.stringify({title:next,path:u.pathname+u.search,at:Date.now()}))}catch(e){}timer=setTimeout(()=>location.assign(u.href),680)},true)})();
+function canonical(u){const c=new URL(u.href);c.searchParams.delete('gv');if(c.pathname.endsWith('/'))c.pathname+='index.html';c.hash='';return c.href}
+document.addEventListener('click',e=>{
+if(e.defaultPrevented||e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||reduced)return;
+const a=e.target.closest?.('a[href]');if(!a||a.hasAttribute('download')||a.target&&a.target!=='_self')return;
+let u;try{u=new URL(a.href,location.href)}catch(e){return}
+if(u.origin!==location.origin||!u.pathname.startsWith(dir)||!/(?:\/|\.html)$/.test(u.pathname))return;
+if(canonical(u)===canonical(new URL(location.href)))return;
+e.preventDefault();e.stopImmediatePropagation();if(busy)return;busy=true;clearTimeout(timer);clearTimeout(fadeTimer);
+const dest=u.pathname.split('/').pop();
+const title=(a.dataset.transition||'').trim()||labels[dest]||(a.textContent||'').trim()||'Услуги';
+u.searchParams.set('gv','7');setTitle(title);root.dataset.navPhase='show';
+try{sessionStorage.setItem(key,JSON.stringify({title,path:u.pathname+u.search,at:Date.now()}))}catch(e){}
+timer=setTimeout(()=>location.assign(u.href),620)
+},true);
+setTimeout(()=>{if(!busy&&root.dataset.navPhase)reset()},8000);
+})();
 (()=>{const d=document;d.documentElement.classList.add('js');const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;const menu=d.querySelector('.menu'),nav=d.querySelector('.navlinks');menu?.addEventListener('click',()=>{let open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(open));menu.textContent=open?'×':'☰'});let nodes=[...d.querySelectorAll('.reveal')];if('IntersectionObserver'in window&&!reduced){const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('shown');io.unobserve(e.target)}}),{threshold:.08});nodes.forEach(n=>io.observe(n))}else nodes.forEach(n=>n.classList.add('shown'));d.querySelectorAll('img').forEach(im=>{const hide=()=>{if(!im.dataset.fallback)im.style.display='none'};im.addEventListener('error',hide);if(im.complete&&!im.naturalWidth)hide()});const cards=[...d.querySelectorAll('.service-card[data-category]')];const search=d.querySelector('#search');const filters=[...d.querySelectorAll('.filter')];let category='all';const initial=new URLSearchParams(location.search).get('category');if(filters.some(b=>b.dataset.category===initial))category=initial;const apply=()=>{let q=(search?.value||'').trim().toLocaleLowerCase('ru');let count=0;cards.forEach(c=>{const show=(category==='all'||category===c.dataset.category)&&c.textContent.toLocaleLowerCase('ru').includes(q);c.hidden=!show;if(show){count++;c.classList.add('shown')}});filters.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.category===category)));const n=d.querySelector('#count');if(n)n.textContent='Найдено: '+count;const empty=d.querySelector('#empty');if(empty)empty.hidden=count!==0};if(cards.length){filters.forEach(b=>b.addEventListener('click',()=>{category=b.dataset.category;apply()}));search?.addEventListener('input',apply);apply()}const form=d.querySelector('.booking-form');if(form){const service=new URLSearchParams(location.search).get('service');if(service){const opts=[...form.elements.service.options];if(opts.some(o=>o.value===service))form.elements.service.value=service}form.addEventListener('submit',e=>{e.preventDefault();const v=new FormData(form);const msg='Здравствуйте! Хочу записаться в GARMONIA.\nУслуга: '+v.get('service')+'\nИмя: '+v.get('name')+'\nТелефон: '+v.get('phone')+'\nУдобное время: '+(v.get('date')||'по согласованию');const u='https://wa.me/79295151055?text='+encodeURIComponent(msg);form.querySelector('output').textContent='Откроется WhatsApp с подготовленным сообщением. Отправьте его самостоятельно, чтобы согласовать запись.';window.open(u,'_blank','noopener,noreferrer')})}})();(()=>{if(!document.querySelector('.filters'))return;const themes={all:'laser',face:'lips',device:'laser',injection:'lips',body:'care',nails:'care',brows:'lips',epil:'laser'};const set=c=>{if(themes[c])document.body.dataset.beauty=themes[c]};set(new URLSearchParams(location.search).get('category')||'all');document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>set(b.dataset.category)))})();
 
 /* Equalize incomplete rows without adding fake cards. */
