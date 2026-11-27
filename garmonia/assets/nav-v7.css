@@ -3,3 +3,12 @@ html::after,.transition,.transition::before,.transition::after{display:none!impo
 #garmonia-nav-cover{position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;box-sizing:border-box;padding:28px;background:#14291f!important;background-image:none!important;color:#fff!important;text-align:center;font:400 clamp(30px,5vw,70px)/1.15 'Spectral',Georgia,serif;overflow-wrap:anywhere;opacity:0;visibility:hidden;pointer-events:none;transform:none!important;animation:none!important;transition:none}
 html[data-nav-phase="show"] #garmonia-nav-cover,html[data-nav-phase="incoming"] #garmonia-nav-cover{opacity:1;visibility:visible;pointer-events:auto}
 html[data-nav-phase="fade"] #garmonia-nav-cover{opacity:0;visibility:visible;pointer-events:none;transition:opacity .22s ease}
+
+/* Soft stationary fade, with independently animated centered title. */
+#garmonia-nav-cover .garmonia-nav-title{display:block;max-width:min(100%,1100px);opacity:1;transform:none;text-wrap:balance}
+html[data-nav-phase="show"] #garmonia-nav-cover{animation:nav-cover-in .32s cubic-bezier(.22,.61,.36,1) both!important}
+html[data-nav-phase="show"] #garmonia-nav-cover .garmonia-nav-title{animation:nav-title-in .45s cubic-bezier(.22,.61,.36,1) .13s both}
+html[data-nav-phase="fade"] #garmonia-nav-cover{transition:opacity .32s ease-in-out}
+@keyframes nav-cover-in{from{opacity:0}to{opacity:1}}
+@keyframes nav-title-in{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){#garmonia-nav-cover,#garmonia-nav-cover .garmonia-nav-title{animation:none!important;transition:none!important}}
