@@ -411,15 +411,6 @@ main[data-section] > .wrap::before { right:101%; top:var(--left-height); rotate:
 main[data-section] > .wrap::after { left:100.5%; top:var(--right-height); rotate:var(--right-turn); background-position:var(--right-cut); }
 .collections + .section::before { width:clamp(50px,5vw,84px); margin:-16px auto 4px; background-position:0 100%; rotate:-9deg; opacity:.72; }
 .visit-copy::after { width:clamp(54px,5vw,82px); margin:4px 11% -12px auto; background-position:0 0; rotate:19deg; opacity:.6; }
-@media(max-width:720px){
-  main[data-section] > .wrap::before { display:none; }
-  main[data-section] > .wrap::after {
-    position:static; width:48px; margin:14px 12% 0 auto; opacity:.58; grid-column:1/-1;
-  }
-  main[data-section="home"] > .wrap::after { display:none; }
-  .collections + .section::before { margin:-5px 25% 7px auto; }
-}
-
 /* Product photography and nursery sizes */
 .plant-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,244px),1fr));align-items:stretch;gap:clamp(16px,2vw,28px);margin-top:24px}
 .plant-tile{min-width:0;display:flex;flex-direction:column;border:1px solid #d5dacd;border-radius:8px;overflow:hidden;background:#fcfbf6;color:#19392d;text-align:left}
@@ -450,3 +441,38 @@ main[data-section] > .wrap::after { left:100.5%; top:var(--right-height); rotate
 .plant-detail-copy .offer-panel{padding:16px 0;margin:6px 0;flex-wrap:wrap;gap:12px}.plant-detail-copy .heart{top:0;right:0}
 .selected-size{display:block;color:#546a5a;font-weight:400}.stock-table th a{text-decoration:underline;text-underline-offset:3px}
 @media(max-width:720px){.plant-detail{grid-template-columns:minmax(0,1fr);gap:20px}.plant-detail-copy .offer-panel .buyline{flex-wrap:wrap}.plant-shelf{grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr))}}
+
+.sprig-border { display:none; }
+@media (max-width:720px) {
+  main[data-section] > .wrap::before, main[data-section] > .wrap::after,
+  .collections + .section::before, .visit-copy::after { display:none; }
+
+  .sprig-border {
+    display:flex; align-items:center; justify-content:center; gap:0;
+    height:58px; position:relative; isolation:isolate; pointer-events:none;
+  }
+  .sprig-border i {
+    display:block; flex:none; width:70px; aspect-ratio:1;
+    background:var(--sprigs) 0 0 / 200% 200% no-repeat;
+    filter:grayscale(1) brightness(.42); opacity:.69;
+  }
+  .sprig-border i:nth-child(1) { transform:rotate(18deg); }
+  .sprig-border i:nth-child(2) { width:55px; margin-inline:-20px; background-position:0 100%; transform:rotate(-12deg); }
+  .sprig-border i:nth-child(3) { width:65px; background-position:100% 100%; transform:rotate(-16deg); }
+  .sprig-between { justify-content:flex-start; margin:4px 0 16px; }
+  .sprig-between i:nth-child(1) { background-position:100% 0; transform:rotate(-24deg); }
+  main:is([data-section="home"],[data-section="about"],[data-section="checkout"]) .sprig-between { justify-content:flex-end; padding-right:5%; }
+  .sprig-end { width:91%; margin:0 auto 20px; }
+  .sprig-end::before,.sprig-end::after { content:""; flex:1; height:1px; background:#adb5a280; margin-inline:12px; }
+  .wrap.nursery-section,.wrap.section { padding-block:24px 12px; }
+  .nursery-section .crumb,.wrap.section .crumb { margin:0 0 16px; }
+  .catalog-intro { padding-block:8px 12px; }
+  .company-banner { margin-bottom:8px; }
+  .plant-detail { margin-bottom:12px; }
+  .nursery-visit { padding-bottom:16px; }
+  .plant-copy h3,.summary h3,.cartrow h3 { overflow-wrap:anywhere; }
+  .cartrow img { width:100%; object-fit:cover; }
+  .cartrow .stepper { justify-self:start; }
+  .nursery-map { display:block; height:clamp(236px,68vw,350px); }
+  .grove-head { max-width:90%; }
+}

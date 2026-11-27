@@ -244,8 +244,14 @@ function installLivingBackground(){
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)reset()});
  if(motion.addEventListener)motion.addEventListener('change',()=>{if(motion.matches){if(frame)cancelAnimationFrame(frame);frame=0;for(const k of ['--garden-x','--garden-y','--garden-light-x','--garden-light-y'])document.documentElement.style.removeProperty(k)}else reset()});
 }
+function mobileSprigs(placement){
+ return `<div class="sprig-border sprig-${placement}" aria-hidden="true"><i></i><i></i><i></i></div>`;
+}
 function decorateGarden(){
  const main=document.querySelector('main');if(!main)return;
+ const breaks=main.querySelectorAll('.company-banner,.catalog-intro,.collections,.plant-detail');
+ for(const section of breaks)section.insertAdjacentHTML('afterend',mobileSprigs('between'));
+ main.insertAdjacentHTML('beforeend',mobileSprigs('end'));
  const surfaces=main.querySelectorAll('.hero,.editorial-hero');
  for(const surface of surfaces){if(surface.querySelector('.garden-ambient'))continue;
  const layer=document.createElement('div');layer.className='garden-ambient';layer.setAttribute('aria-hidden','true');
